@@ -1,6 +1,8 @@
 import openai
 from config.settings import get_settings
 from typing import Dict, Any
+from pptx import Presentation as PPTXPresentation
+import tempfile
 
 settings = get_settings()
 openai.api_key = settings.OPENAI_API_KEY
@@ -35,3 +37,14 @@ async def generate_presentation_structure(text: str) -> Dict[str, Any]:
     )
     
     return response.choices[0].message.content 
+
+async def generate_presentation_pptx(content: dict) -> str:
+    prs = PPTXPresentation()
+    for slide in content.get("slides", []):
+        slide_layout = prs.slide_layouts[1]  # обычный слайд
+        pptx_slide = prs.slides.add_slide(slide_layout)
+        pptx_slide.shapes.title.text = slide.get("title", "")
+        pptx_slide.placeholders[1].text = slide.get("content", "")
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".pptx")
+    prs.save(tmp.name)
+    return tmp.name 

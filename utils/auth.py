@@ -42,13 +42,39 @@ async def get_current_user(
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         email: str = payload.get("sub")
+        role: str = payload.get("role")
+        credits: int = payload.get("credits")
         if email is None:
             raise credentials_exception
-        token_data = TokenData(email=email)
+        token_data = TokenData(email=email, role=role, credits=credits)
     except JWTError:
         raise credentials_exception
     
     user = await session.query(User).filter(User.email == token_data.email).first()
+    if user is None:
+        raise credentials_exception
+    return user
+
+# Функция для валидации refresh токена
+async def get_current_user_by_refresh_token(
+    refresh_token: str,
+    session: AsyncSession = Depends(get_session)
+) -> User:
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate refresh token",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(refresh_token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        if payload.get("type") != "refresh":
+            raise credentials_exception
+        email: str = payload.get("sub")
+        if email is None:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+    user = await session.query(User).filter(User.email == email).first()
     if user is None:
         raise credentials_exception
     return user 

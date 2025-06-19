@@ -14,11 +14,12 @@ services:
     depends_on:
       - db
       - redis
+    restart: on-failure
     volumes:
       - ./uploads:/app/uploads
 
   db:
-    image: postgres:15
+    image: postgres
     env_file:
       - .env
     ports:

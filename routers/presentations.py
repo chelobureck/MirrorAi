@@ -4,8 +4,11 @@ from typing import List
 from models.base import get_session
 from models.user import User
 from models.presentation import Presentation
-from schemas.presentation import PresentationResponse
+from schemas.presentation import PresentationResponse, PresentationCreate
 from utils.auth import get_current_user
+from fastapi.responses import FileResponse
+from utils.openai_client import generate_presentation_pptx
+import os
 
 router = APIRouter(prefix="/presentations", tags=["presentations"])
 
@@ -37,3 +40,78 @@ async def get_presentation(
         )
     
     return presentation 
+
+@router.post("/", response_model=PresentationResponse)
+async def create_presentation(
+    presentation: PresentationCreate,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    # Ограничения для гостей
+    if current_user.role == "guest":
+        if current_user.credits <= 0:
+            raise HTTPException(status_code=403, detail="Кредиты закончились")
+        if len(presentation.content.get("slides", [])) > 5:
+            raise HTTPException(status_code=403, detail="Гостям доступно не более 5 слайдов")
+        current_user.credits -= 1
+        session.add(current_user)
+        await session.commit()
+    new_presentation = Presentation(
+        title=presentation.title,
+        content=presentation.content,
+        user_id=current_user.id
+    )
+    session.add(new_presentation)
+    await session.commit()
+    await session.refresh(new_presentation)
+    return new_presentation
+
+@router.put("/{presentation_id}", response_model=PresentationResponse)
+async def update_presentation(
+    presentation_id: int,
+    presentation: PresentationCreate,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    db_presentation = await session.query(Presentation).filter(
+        Presentation.id == presentation_id,
+        Presentation.user_id == current_user.id
+    ).first()
+    if not db_presentation:
+        raise HTTPException(status_code=404, detail="Presentation not found")
+    db_presentation.title = presentation.title
+    db_presentation.content = presentation.content
+    await session.commit()
+    await session.refresh(db_presentation)
+    return db_presentation
+
+@router.delete("/{presentation_id}")
+async def delete_presentation(
+    presentation_id: int,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    db_presentation = await session.query(Presentation).filter(
+        Presentation.id == presentation_id,
+        Presentation.user_id == current_user.id
+    ).first()
+    if not db_presentation:
+        raise HTTPException(status_code=404, detail="Presentation not found")
+    await session.delete(db_presentation)
+    await session.commit()
+    return {"ok": True}
+
+@router.get("/download/{presentation_id}")
+async def download_presentation(
+    presentation_id: int,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    db_presentation = await session.query(Presentation).filter(
+        Presentation.id == presentation_id,
+        Presentation.user_id == current_user.id
+    ).first()
+    if not db_presentation:
+        raise HTTPException(status_code=404, detail="Presentation not found")
+    pptx_path = await generate_presentation_pptx(db_presentation.content)
+    return FileResponse(pptx_path, filename=f"presentation_{presentation_id}.pptx") 
