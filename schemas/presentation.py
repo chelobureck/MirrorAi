@@ -7,11 +7,13 @@ class PresentationBase(BaseModel):
 
 class PresentationCreate(PresentationBase):
     content: Dict[str, Any]
+    board_id: Optional[int] = None
 
 class PresentationResponse(PresentationBase):
     id: int
     user_id: int
     content: Dict[str, Any]
+    board_id: Optional[int] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
 

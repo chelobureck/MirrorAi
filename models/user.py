@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from .base import Base
@@ -14,4 +14,7 @@ class User(Base):
     username = Column(String, unique=True, index=True, nullable=False)
     role = Column(String, default="user")  # user или guest
     credits = Column(Integer, default=0)
-    presentations = relationship("Presentation", back_populates="user") 
+    presentations = relationship("Presentation", back_populates="user")
+    is_email_verified = Column(Boolean, default=False)
+    email_verification_token = Column(String, nullable=True)
+    preferences_id = Column(Integer, ForeignKey("userpreferences.id"), nullable=True) 

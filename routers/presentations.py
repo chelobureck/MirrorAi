@@ -53,13 +53,12 @@ async def create_presentation(
             raise HTTPException(status_code=403, detail="Кредиты закончились")
         if len(presentation.content.get("slides", [])) > 5:
             raise HTTPException(status_code=403, detail="Гостям доступно не более 5 слайдов")
-        current_user.credits -= 1
-        session.add(current_user)
-        await session.commit()
+        raise HTTPException(status_code=403, detail="Гостям нельзя сохранять презентации")
     new_presentation = Presentation(
         title=presentation.title,
         content=presentation.content,
-        user_id=current_user.id
+        user_id=current_user.id,
+        board_id=presentation.board_id
     )
     session.add(new_presentation)
     await session.commit()
@@ -81,6 +80,7 @@ async def update_presentation(
         raise HTTPException(status_code=404, detail="Presentation not found")
     db_presentation.title = presentation.title
     db_presentation.content = presentation.content
+    db_presentation.board_id = presentation.board_id
     await session.commit()
     await session.refresh(db_presentation)
     return db_presentation

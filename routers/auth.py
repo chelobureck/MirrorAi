@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import timedelta
 from models.base import get_session
 from models.user import User
-from schemas.user import UserCreate, UserResponse, Token
+from schemas.user import UserCreate, UserResponse, Token, EmailVerificationRequest, EmailVerificationResponse
 from utils.auth import (
     verify_password,
     get_password_hash,
@@ -15,6 +15,7 @@ from utils.auth import (
 from config.settings import get_settings
 from fastapi.responses import RedirectResponse
 import httpx
+import secrets
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 settings = get_settings()
@@ -146,4 +147,32 @@ async def google_callback(code: str, session: AsyncSession = Depends(get_session
         data={"sub": user.email, "type": "refresh"}, expires_delta=refresh_token_expires
     )
     # Можно сделать редирект на фронт с токенами в query params или cookie
-    return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"} 
+    return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
+
+@router.post("/email-verification-request", response_model=EmailVerificationResponse)
+async def email_verification_request(
+    data: EmailVerificationRequest,
+    session: AsyncSession = Depends(get_session)
+):
+    user = await session.query(User).filter(User.email == data.email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+    token = secrets.token_urlsafe(32)
+    user.email_verification_token = token
+    await session.commit()
+    # Здесь должна быть отправка email (заглушка)
+    return EmailVerificationResponse(message="Письмо отправлено (заглушка)")
+
+@router.get("/verify-email", response_model=EmailVerificationResponse)
+async def verify_email(token: str, session: AsyncSession = Depends(get_session)):
+    user = await session.query(User).filter(User.email_verification_token == token).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Неверный токен")
+    user.is_email_verified = True
+    user.email_verification_token = None
+    await session.commit()
+    return EmailVerificationResponse(message="Email подтверждён")
+
+@router.get("/me", response_model=UserResponse)
+async def get_me(current_user: User = Depends(get_current_user)):
+    return current_user 

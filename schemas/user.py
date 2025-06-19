@@ -17,6 +17,8 @@ class UserResponse(UserBase):
     role: str
     credits: int
     created_at: datetime
+    is_email_verified: Optional[bool] = False
+    preferences_id: Optional[int] = None
     
     class Config:
         from_attributes = True
@@ -29,4 +31,20 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     email: Optional[str] = None
     role: Optional[str] = None
-    credits: Optional[int] = None 
+    credits: Optional[int] = None
+
+class EmailVerificationRequest(BaseModel):
+    email: EmailStr
+
+class EmailVerificationResponse(BaseModel):
+    message: str
+
+class UserPreferencesResponse(BaseModel):
+    theme: str
+    language: str
+    default_template_id: Optional[int] = None
+
+class UserPreferencesUpdate(BaseModel):
+    theme: Optional[str] = None
+    language: Optional[str] = None
+    default_template_id: Optional[int] = None 

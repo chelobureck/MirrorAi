@@ -6,6 +6,9 @@ import redis.asyncio as redis
 from config.settings import get_settings
 from routers import auth, presentations, generate
 from models.base import Base, engine
+from routers.boards import router as boards_router
+from routers.templates import router as templates_router
+from routers.preferences import router as preferences_router
 
 settings = get_settings()
 app = FastAPI(
@@ -27,6 +30,9 @@ app.add_middleware(
 app.include_router(auth.router, prefix=settings.API_V1_STR)
 app.include_router(presentations.router, prefix=settings.API_V1_STR)
 app.include_router(generate.router, prefix=settings.API_V1_STR)
+app.include_router(boards_router)
+app.include_router(templates_router)
+app.include_router(preferences_router)
 
 @app.on_event("startup")
 async def startup():

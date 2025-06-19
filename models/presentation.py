@@ -12,5 +12,6 @@ class Presentation(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    board_id = Column(Integer, ForeignKey("boards.id"), nullable=True)
 
     user = relationship("User", back_populates="presentations") 
