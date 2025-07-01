@@ -1,3 +1,4 @@
+# SayDeck Docker Compose - Hackathon version by bestcomp
 services:
   web:
     build: .
