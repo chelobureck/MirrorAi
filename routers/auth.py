@@ -16,6 +16,7 @@ from config.settings import get_settings
 from fastapi.responses import RedirectResponse
 import httpx
 import secrets
+from sqlalchemy import select
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 settings = get_settings()
@@ -26,7 +27,10 @@ async def register(
     session: AsyncSession = Depends(get_session)
 ):
     # Проверяем, существует ли пользователь
-    existing_user = await session.query(User).filter((User.email == user_data.email) | (User.username == user_data.username)).first()
+    result = await session.execute(
+        select(User).where((User.email == user_data.email) | (User.username == user_data.username))
+    )
+    existing_user = result.scalars().first()
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
