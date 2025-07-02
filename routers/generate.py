@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Body
+from fastapi_limiter.depends import RateLimiter
 from sqlalchemy.ext.asyncio import AsyncSession
 import aiofiles
 import os
@@ -38,7 +39,7 @@ async def generate_from_url(
     await session.refresh(new_presentation)
     return new_presentation
 
-@router.post("/audio", response_model=PresentationResponse)
+@router.post("/audio", response_model=PresentationResponse, dependencies=[Depends(RateLimiter(times=5, seconds=60))])
 async def generate_from_audio(
     audio_file: UploadFile = File(...),
     language: str = Body("ru"),
@@ -72,7 +73,7 @@ async def generate_from_audio(
         if os.path.exists(file_path):
             os.remove(file_path)
 
-@router.post("/text", response_model=PresentationResponse)
+@router.post("/text", response_model=PresentationResponse, dependencies=[Depends(RateLimiter(times=10, seconds=60))])
 async def generate_from_text(
     text: str = Body(...),
     language: str = Body("ru"),
