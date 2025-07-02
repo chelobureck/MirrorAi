@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Cookie
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from datetime import timedelta
 from models.base import get_session
 from models.user import User
@@ -26,7 +27,10 @@ async def register(
     session: AsyncSession = Depends(get_session)
 ):
     # Проверяем, существует ли пользователь
-    existing_user = await session.query(User).filter((User.email == user_data.email) | (User.username == user_data.username)).first()
+    result = await session.execute(
+        select(User).where((User.email == user_data.email) | (User.username == user_data.username))
+    )
+    existing_user = result.scalars().first()
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

@@ -3,21 +3,33 @@ from config.settings import get_settings
 from typing import Dict, Any
 from pptx import Presentation as PPTXPresentation
 import tempfile
+import json
 
 settings = get_settings()
-openai.api_key = settings.OPENAI_API_KEY
+client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
 
 async def transcribe_audio(audio_file_path: str) -> str:
     """Транскрибирует аудио файл с помощью Whisper API"""
     with open(audio_file_path, "rb") as audio_file:
-        transcript = await openai.Audio.atranscribe("whisper-1", audio_file)
-    return transcript["text"]
+        transcript = client.audio.transcriptions.create(
+            model="whisper-1",
+            file=audio_file
+        )
+    return transcript.text
 
-async def generate_presentation_structure(text: str) -> Dict[str, Any]:
+async def generate_presentation_structure(
+    text: str, 
+    language: str = "ru", 
+    animation: bool = False, 
+    slides_count: int = 5
+) -> Dict[str, Any]:
     """Генерирует структуру презентации с помощью GPT-4"""
     prompt = f"""
-    Создай структуру презентации на основе следующего текста. 
-    Верни JSON с полями:
+    Создай структуру презентации на основе следующего текста на языке: {language}. 
+    Количество слайдов: {slides_count}
+    Анимация: {"включена" if animation else "отключена"}
+    
+    Верни ТОЛЬКО валидный JSON с полями:
     - title: заголовок презентации
     - slides: массив слайдов, где каждый слайд имеет поля:
         - title: заголовок слайда
@@ -27,16 +39,29 @@ async def generate_presentation_structure(text: str) -> Dict[str, Any]:
     Текст: {text}
     """
     
-    response = await openai.ChatCompletion.acreate(
+    response = client.chat.completions.create(
         model="gpt-4",
         messages=[
-            {"role": "system", "content": "Ты - эксперт по созданию презентаций."},
+            {"role": "system", "content": "Ты - эксперт по созданию презентаций. Отвечай только валидным JSON."},
             {"role": "user", "content": prompt}
         ],
         temperature=0.7
     )
     
-    return response.choices[0].message.content 
+    try:
+        return json.loads(response.choices[0].message.content)
+    except json.JSONDecodeError:
+        # Fallback structure if JSON parsing fails
+        return {
+            "title": "Сгенерированная презентация",
+            "slides": [
+                {
+                    "title": f"Слайд {i+1}",
+                    "content": f"Содержимое слайда {i+1}",
+                    "type": "content"
+                } for i in range(slides_count)
+            ]
+        } 
 
 async def generate_presentation_pptx(content: dict) -> str:
     prs = PPTXPresentation()

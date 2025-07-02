@@ -47,12 +47,6 @@ class Settings(BaseSettings):
         env_file = ".env"
         case_sensitive = True
 
-DATABASE_URL = f"postgresql+asyncpg://{os.getenv('DATABASE_USER')}:" \
-            f"{os.getenv('DATABASE_PASSWORD')}@" \
-            f"{os.getenv('DATABASE_HOST')}:" \
-            f"{os.getenv('DATABASE_PORT')}/" \
-            f"{os.getenv('DATABASE_NAME')}"
-
 @lru_cache()
 def get_settings() -> Settings:
     return Settings() 
