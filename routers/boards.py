@@ -6,6 +6,7 @@ from models.board import Board
 from models.user import User
 from schemas.board import BoardCreate, BoardResponse
 from utils.auth import get_current_user
+from sqlalchemy import select
 
 router = APIRouter(prefix="/boards", tags=["boards"])
 
@@ -26,7 +27,8 @@ async def get_boards(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
-    boards = await session.query(Board).filter(Board.user_id == current_user.id).all()
+    result = await session.execute(select(Board).where(Board.user_id == current_user.id))
+    boards = result.scalars().all()
     return boards
 
 @router.get("/{board_id}", response_model=BoardResponse)
@@ -35,7 +37,8 @@ async def get_board(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
-    board = await session.query(Board).filter(Board.id == board_id, Board.user_id == current_user.id).first()
+    result = await session.execute(select(Board).where(Board.id == board_id, Board.user_id == current_user.id))
+    board = result.scalars().first()
     if not board:
         raise HTTPException(status_code=404, detail="Борд не найден")
     return board
@@ -46,7 +49,8 @@ async def delete_board(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
-    board = await session.query(Board).filter(Board.id == board_id, Board.user_id == current_user.id).first()
+    result = await session.execute(select(Board).where(Board.id == board_id, Board.user_id == current_user.id))
+    board = result.scalars().first()
     if not board:
         raise HTTPException(status_code=404, detail="Борд не найден")
     await session.delete(board)
