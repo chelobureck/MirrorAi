@@ -2,10 +2,17 @@
 
 **Готовый к хакатону проект** - веб-приложение для создания презентаций из голосового ввода с помощью AI.
 
+[![GitHub release](https://img.shields.io/github/v/release/chelobureck/SayDeck)](https://github.com/chelobureck/SayDeck/releases)
+[![Docker](https://img.shields.io/badge/docker-ready-blue)](https://docs.docker.com/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.100%2B-green)](https://fastapi.tiangolo.com/)
+
 ## ⚡ Быстрый старт
 
 1. **Клонируйте проект и запустите:**
    ```bash
+   git clone https://github.com/chelobureck/SayDeck.git
+   cd SayDeck
+   
    # Windows
    start_hackathon.bat
    
