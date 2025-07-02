@@ -17,4 +17,5 @@ class User(Base):
     presentations = relationship("Presentation", back_populates="user")
     is_email_verified = Column(Boolean, default=False)
     email_verification_token = Column(String, nullable=True)
+    email_verification_sent_at = Column(DateTime(timezone=True), nullable=True)
     preferences_id = Column(Integer, ForeignKey("userpreferences.id"), nullable=True) 

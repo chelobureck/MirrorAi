@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Cookie
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
-from datetime import timedelta
+from datetime import timedelta, datetime, timezone
 from models.base import get_session
 from models.user import User
 from schemas.user import UserCreate, UserResponse, Token, EmailVerificationRequest, EmailVerificationResponse
@@ -17,6 +17,7 @@ from fastapi.responses import RedirectResponse
 import httpx
 import secrets
 from sqlalchemy import select
+from utils.email import send_verification_email
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 settings = get_settings()
@@ -164,11 +165,16 @@ async def email_verification_request(
     user = result.scalars().first()
     if not user:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
+    now = datetime.now(timezone.utc)
+    # Ограничение: не чаще 1 раза в 60 секунд
+    if user.email_verification_sent_at and (now - user.email_verification_sent_at).total_seconds() < 60:
+        raise HTTPException(status_code=429, detail="Запросить новый код можно не чаще, чем раз в 60 секунд")
     token = secrets.token_urlsafe(32)
     user.email_verification_token = token
+    user.email_verification_sent_at = now
     await session.commit()
-    # Здесь должна быть отправка email (заглушка)
-    return EmailVerificationResponse(message="Письмо отправлено (заглушка)")
+    await send_verification_email(user.email, token)
+    return EmailVerificationResponse(message="Письмо отправлено")
 
 @router.get("/verify-email", response_model=EmailVerificationResponse)
 async def verify_email(token: str, session: AsyncSession = Depends(get_session)):
@@ -176,8 +182,13 @@ async def verify_email(token: str, session: AsyncSession = Depends(get_session))
     user = result.scalars().first()
     if not user:
         raise HTTPException(status_code=404, detail="Неверный токен")
+    now = datetime.now(timezone.utc)
+    # Проверка срока действия токена (5 минут)
+    if not user.email_verification_sent_at or (now - user.email_verification_sent_at).total_seconds() > 300:
+        raise HTTPException(status_code=400, detail="Срок действия токена истёк. Запросите новый код.")
     user.is_email_verified = True
     user.email_verification_token = None
+    user.email_verification_sent_at = None
     await session.commit()
     return EmailVerificationResponse(message="Email подтверждён")
 
