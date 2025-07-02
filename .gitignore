@@ -49,6 +49,31 @@ venv.bak/
 # IDE
 .vscode/
 .idea/
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+*.bak
+
+# Test files
+test_*.py
+*_test.py
+api_tester.html
+check_api.*
+quick_test.*
+*test*.bat
+
+# Uploads
+uploads/*
+!uploads/.gitkeep
+
+# Docker
+.dockerignore
+
+# Project specific
+*.md.backup
+.idea/
 *.swp
 *.swo
 

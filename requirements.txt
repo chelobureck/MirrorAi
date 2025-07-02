@@ -32,6 +32,7 @@ redis>=4.5.0
 
 # File Processing
 python-pptx>=1.0.1
+reportlab>=3.6.0
 
 # Development & Testing
 pytest>=7.0.0

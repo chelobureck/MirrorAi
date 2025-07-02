@@ -1,14 +1,19 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_limiter import FastAPILimiter
-from fastapi_limiter.depends import RateLimiter
 import redis.asyncio as redis
 from config.settings import get_settings
-from routers import auth, presentations, generate
 from models.base import Base, engine
-from routers.boards import router as boards_router
-from routers.templates import router as templates_router
-from routers.preferences import router as preferences_router
+from routers import (
+    auth, 
+    presentations, 
+    generate_v2, 
+    public, 
+    export, 
+    boards, 
+    templates, 
+    preferences
+)
 
 settings = get_settings()
 app = FastAPI(
@@ -27,12 +32,15 @@ app.add_middleware(
 )
 
 # Подключаем роутеры
-app.include_router(auth.router, prefix=settings.API_V1_STR)
-app.include_router(presentations.router, prefix=settings.API_V1_STR)
-app.include_router(generate.router, prefix=settings.API_V1_STR)
-app.include_router(boards_router)
-app.include_router(templates_router)
-app.include_router(preferences_router)
+app.include_router(auth.router, prefix=settings.API_V1_STR, tags=["auth"])
+app.include_router(presentations.router, prefix=settings.API_V1_STR, tags=["presentations"])
+app.include_router(generate_v2.router, prefix=settings.API_V1_STR, tags=["generate"])
+app.include_router(public.router, prefix=settings.API_V1_STR, tags=["public"])
+app.include_router(export.router, prefix=settings.API_V1_STR, tags=["export"])
+app.include_router(boards.router, prefix=settings.API_V1_STR, tags=["boards"])
+app.include_router(templates.router, prefix=settings.API_V1_STR, tags=["templates"])
+app.include_router(preferences.router, prefix=settings.API_V1_STR, tags=["preferences"])
+
 
 @app.on_event("startup")
 async def startup():
@@ -47,7 +55,23 @@ async def startup():
         decode_responses=True
     )
     await FastAPILimiter.init(redis_client)
+    
+    print("🚀 База данных и Redis успешно инициализированы!")
 
 @app.get("/")
 async def root():
-    return {"message": "Welcome to SayDeck API"} 
+    return {"message": "Welcome to SayDeck API"}
+
+@app.get("/api/v1/health")
+async def api_health():
+    """Проверка работоспособности API"""
+    return {
+        "status": "healthy",
+        "message": "SayDeck API v1 работает",
+        "endpoints": {
+            "generate": "/api/v1/generate/providers",
+            "presentations": "/api/v1/presentations",
+            "public": "/api/v1/public",
+            "export": "/api/v1/export"
+        }
+    }

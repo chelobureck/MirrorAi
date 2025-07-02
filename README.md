@@ -1,132 +1,121 @@
-# SayDeck 🎤➡️📊
+# SayDeck API 🎯
 
-**Готовый к хакатону проект** - веб-приложение для создания презентаций из голосового ввода с помощью AI.
+> AI-Powered Presentation Generator with Multiple AI Providers
 
-[![GitHub release](https://img.shields.io/github/v/release/chelobureck/SayDeck)](https://github.com/chelobureck/SayDeck/releases)
-[![Docker](https://img.shields.io/badge/docker-ready-blue)](https://docs.docker.com/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.100%2B-green)](https://fastapi.tiangolo.com/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
+[![Python](https://img.shields.io/badge/python-3.11+-blue.svg?style=for-the-badge&logo=python)](https://www.python.org/downloads/)
+[![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
+[![PostgreSQL](https://img.shields.io/badge/postgres-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 
-## ⚡ Быстрый старт
+## 🚀 Quick Start
 
-1. **Клонируйте проект и запустите:**
-   ```bash
-   git clone https://github.com/chelobureck/SayDeck.git
-   cd SayDeck
-   
-   # Windows
-   start_hackathon.bat
-   
-   # Linux/Mac  
-   docker-compose up -d
-   ```
-
-2. **Настройте API ключи в `.env`:**
-   ```env
-   OPENAI_API_KEY=your_openai_key_here
-   ```
-
-3. **Откройте в браузере:**
-   - API: http://localhost:8000
-   - Документация: http://localhost:8000/docs
-
-## 🚀 Возможности
-
-- Регистрация и авторизация пользователей
-- Загрузка аудио файлов и их транскрибация через Whisper API
-- Генерация структуры презентации с помощью GPT-4
-- Сохранение и управление презентациями
-- Rate limiting и безопасность
-
-## Требования
-
-- Python 3.11+
-- PostgreSQL 15+
-- Redis 7+
-- Docker и Docker Compose (опционально)
-
-## Локальная установка
-
-1. Клонируйте репозиторий:
+### Option 1: Docker Compose (Recommended)
 ```bash
-git clone https://github.com/yourusername/saydeck.git
-cd saydeck
+# Clone repository
+git clone <repository-url>
+cd SayDeck
+
+# Start all services
+docker compose up -d
+
+# Check status
+docker compose ps
 ```
 
-2. Создайте файл `.env` в корневой директории:
-```env
-# Основные настройки
-SECRET_KEY=your-secret-key
-PROJECT_NAME=SayDeck
-VERSION=1.0.0
-
-# База данных
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=your-password
-POSTGRES_DB=saydeck
-
-# Redis
-REDIS_HOST=localhost
-REDIS_PORT=6379
-
-# OpenAI
-OPENAI_API_KEY=your-openai-api-key
-```
-
-3. Установите зависимости:
+### Option 2: Local Development
 ```bash
+# Install dependencies
 pip install -r requirements.txt
-```
 
-4. Запустите приложение:
-```bash
+# Start external services
+docker compose up -d db redis
+
+# Run API server
 uvicorn main:app --reload
 ```
 
-## Запуск с Docker
+## 🌐 API Endpoints
 
-1. Создайте файл `.env` (как описано выше)
+- **Swagger UI**: http://localhost:8000/docs
+- **Health Check**: http://localhost:8000/api/v1/health
+- **AI Providers**: http://localhost:8000/api/v1/generate/providers
 
-2. Запустите с помощью Docker Compose:
+## 🧠 AI Providers
+
+| Provider | Status | Models | Features |
+|----------|--------|--------|----------|
+| **Groq** | ✅ Active | Llama 3.1 70B/8B | Fast, Free tier |
+| **OpenAI** | 🔑 API Key needed | GPT-4, GPT-3.5 | High quality |
+| **Ollama** | 🏠 Local setup | Llama 3.1 8B | Private, Offline |
+
+## 🧪 Test AI Generation
+
 ```bash
-docker-compose up --build
+# Test Groq provider
+curl -X POST "http://localhost:8000/api/v1/generate/test/groq" \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": "Create a presentation about AI in healthcare"}'
+
+# Test all providers
+curl -X POST "http://localhost:8000/api/v1/generate/test/all" \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": "Explain blockchain technology"}'
 ```
 
-## Деплой на Render
+## ⚙️ Configuration
 
-1. Создайте новый Web Service на Render
-2. Подключите ваш GitHub репозиторий
-3. Настройте следующие переменные окружения:
-   - `POSTGRES_USER`
-   - `POSTGRES_PASSWORD`
-   - `POSTGRES_DB`
-   - `SECRET_KEY`
-   - `OPENAI_API_KEY`
-   - `REDIS_HOST`
-   - `REDIS_PORT`
+Copy `.env.example` to `.env` and configure:
 
-4. Настройте следующие параметры:
-   - Build Command: `pip install -r requirements.txt`
-   - Start Command: `uvicorn main:app --host 0.0.0.0 --port $PORT`
+```bash
+# AI Providers
+GROQ_API_KEY=your_groq_api_key
+OPENAI_API_KEY=your_openai_api_key  # Optional
 
-5. Добавьте PostgreSQL и Redis как отдельные сервисы в Render
+# Database
+POSTGRES_USER=say_deck_user
+POSTGRES_PASSWORD=your_password
+POSTGRES_DB=say_deck
+POSTGRES_SERVER=localhost  # or 'db' for Docker
 
-## API Endpoints
+# Redis
+REDIS_HOST=localhost  # or 'redis' for Docker
+REDIS_PORT=6379
 
-- `POST /api/v1/auth/register` - Регистрация пользователя
-- `POST /api/v1/auth/login` - Авторизация
-- `POST /api/v1/generate/audio` - Генерация презентации из аудио
-- `POST /api/v1/generate/text` - Генерация презентации из текста
-- `GET /api/v1/presentations` - Список презентаций
-- `GET /api/v1/presentations/{id}` - Получение презентации по ID
+# Security
+SECRET_KEY=your-secret-key
+```
 
-## Безопасность
+## 📚 Documentation
 
-- JWT аутентификация
-- Rate limiting через Redis
-- CORS настройки
-- Валидация входных данных
-- Ограничение размера файлов
+- 📖 **[Complete Project Guide](PROJECT_GUIDE.md)** - Detailed explanation of every file
+- 🌐 **[API Documentation](http://localhost:8000/docs)** - Interactive Swagger UI
+- 🐳 **[Docker Setup](docker-compose.yml)** - Container orchestration
 
-## Лицензия
+## 🏗️ Architecture
 
-MIT 
+```
+FastAPI Backend
+├── 🧠 AI Services (Groq, OpenAI, Ollama)
+├── 🗄️ PostgreSQL Database  
+├── ⚡ Redis Cache
+├── 🔐 JWT Authentication
+└── 📊 RESTful API
+```
+
+## 🛠️ Tech Stack
+
+- **Backend**: FastAPI + Python 3.11
+- **Database**: PostgreSQL 17 + SQLAlchemy (async)
+- **Cache**: Redis 7
+- **AI**: Groq, OpenAI, Ollama APIs
+- **Container**: Docker + Docker Compose
+- **Auth**: JWT tokens
+- **Validation**: Pydantic v2
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+---
+
+**Ready for hackathon presentation! 🎯**
