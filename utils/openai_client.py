@@ -6,10 +6,17 @@ import tempfile
 import json
 
 settings = get_settings()
-client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
+
+def get_openai_client():
+    """Ленивая инициализация OpenAI клиента"""
+    if not hasattr(get_openai_client, '_client'):
+        get_openai_client._client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
+        print(f"✓ OpenAI client initialized with key: {settings.OPENAI_API_KEY[:10]}...")
+    return get_openai_client._client
 
 async def transcribe_audio(audio_file_path: str) -> str:
     """Транскрибирует аудио файл с помощью Whisper API"""
+    client = get_openai_client()
     with open(audio_file_path, "rb") as audio_file:
         transcript = client.audio.transcriptions.create(
             model="whisper-1",
@@ -39,6 +46,7 @@ async def generate_presentation_structure(
     Текст: {text}
     """
     
+    client = get_openai_client()
     response = client.chat.completions.create(
         model="gpt-4",
         messages=[

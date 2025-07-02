@@ -6,7 +6,7 @@ from models.userpreferences import UserPreferences
 from schemas.userpreferences import UserPreferencesResponse, UserPreferencesUpdate
 from utils.auth import get_current_user
 
-router = APIRouter(prefix="/user/preferences", tags=["user-preferences"])
+router = APIRouter(prefix="/preferences", tags=["user-preferences"])
 
 @router.get("/", response_model=UserPreferencesResponse)
 async def get_preferences(

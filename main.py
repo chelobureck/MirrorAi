@@ -39,7 +39,7 @@ app.include_router(public.router, prefix=settings.API_V1_STR, tags=["public"])
 app.include_router(export.router, prefix=settings.API_V1_STR, tags=["export"])
 app.include_router(boards.router, prefix=settings.API_V1_STR, tags=["boards"])
 app.include_router(templates.router, prefix=settings.API_V1_STR, tags=["templates"])
-app.include_router(preferences.router, prefix=settings.API_V1_STR, tags=["preferences"])
+app.include_router(preferences.router, prefix=settings.API_V1_STR, tags=["user-preferences"])
 
 
 @app.on_event("startup")

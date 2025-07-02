@@ -63,6 +63,8 @@ api_tester.html
 check_api.*
 quick_test.*
 *test*.bat
+restart.bat
+show_routes.py
 
 # Uploads
 uploads/*

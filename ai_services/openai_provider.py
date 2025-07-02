@@ -13,14 +13,26 @@ class OpenAIProvider(AIProvider):
     """Провайдер OpenAI"""
     
     def __init__(self):
-        if settings.OPENAI_API_KEY and settings.OPENAI_API_KEY != "your_openai_key":
-            self.client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
-        else:
-            self.client = None
+        self.client = None
+        self._initialized = False
+    
+    def _ensure_client(self):
+        """Ленивая инициализация OpenAI клиента"""
+        if not self._initialized:
+            openai_key = getattr(settings, 'OPENAI_API_KEY', None)
+            if openai_key and openai_key != "your_openai_key":
+                self.client = openai.OpenAI(api_key=openai_key)
+                print(f"✓ OpenAI initialized with key: {openai_key[:10]}...")
+            else:
+                self.client = None
+                print("❌ OpenAI API key not configured properly")
+            self._initialized = True
+        return self.client
     
     async def generate_presentation(self, request: AIGenerationRequest) -> Dict[str, Any]:
         """Генерирует презентацию через OpenAI GPT-4"""
-        if not self.client:
+        client = self._ensure_client()
+        if not client:
             raise ValueError("OpenAI API key not configured")
         
         prompt = f"""
@@ -38,7 +50,7 @@ class OpenAIProvider(AIProvider):
         Текст: {request.text}
         """
         
-        response = self.client.chat.completions.create(
+        response = client.chat.completions.create(
             model="gpt-4",
             messages=[
                 {"role": "system", "content": "Ты - эксперт по созданию презентаций. Отвечай только валидным JSON."},
@@ -54,11 +66,12 @@ class OpenAIProvider(AIProvider):
     
     async def transcribe_audio(self, request: AITranscriptionRequest) -> str:
         """Транскрибирует аудио через Whisper"""
-        if not self.client:
+        client = self._ensure_client()
+        if not client:
             raise ValueError("OpenAI API key not configured")
         
         with open(request.audio_file_path, "rb") as audio_file:
-            transcript = self.client.audio.transcriptions.create(
+            transcript = client.audio.transcriptions.create(
                 model="whisper-1",
                 file=audio_file
             )
@@ -68,7 +81,8 @@ class OpenAIProvider(AIProvider):
         return "OpenAI"
     
     def is_available(self) -> bool:
-        return self.client is not None
+        client = self._ensure_client()
+        return client is not None
     
     def _create_fallback_presentation(self, request: AIGenerationRequest) -> Dict[str, Any]:
         """Создает fallback презентацию если JSON parsing не удался"""

@@ -13,18 +13,26 @@ class GroqProvider(AIProvider):
     """Провайдер Groq - быстрые LLM модели"""
     
     def __init__(self):
-        # Получаем ключ Groq из настроек
-        groq_key = getattr(settings, 'GROQ_API_KEY', None)
-        if groq_key and groq_key != "your_groq_key" and groq_key.startswith('gsk_'):
-            self.client = Groq(api_key=groq_key)
-            print(f"✓ Groq initialized with key: {groq_key[:10]}...")
-        else:
-            self.client = None
-            print("❌ Groq API key not configured properly")
+        self.client = None
+        self._initialized = False
+    
+    def _ensure_client(self):
+        """Ленивая инициализация Groq клиента"""
+        if not self._initialized:
+            groq_key = getattr(settings, 'GROQ_API_KEY', None)
+            if groq_key and groq_key != "your_groq_key" and groq_key.startswith('gsk_'):
+                self.client = Groq(api_key=groq_key)
+                print(f"✓ Groq initialized with key: {groq_key[:10]}...")
+            else:
+                self.client = None
+                print("❌ Groq API key not configured properly")
+            self._initialized = True
+        return self.client
     
     async def generate_presentation(self, request: AIGenerationRequest) -> Dict[str, Any]:
         """Генерирует презентацию через Groq Llama"""
-        if not self.client:
+        client = self._ensure_client()
+        if not client:
             raise ValueError("Groq API key not configured")
         
         # Улучшенный промпт для Groq Llama
@@ -58,7 +66,7 @@ class GroqProvider(AIProvider):
         """
         
         try:
-            response = self.client.chat.completions.create(
+            response = client.chat.completions.create(
                 model="llama-3.1-70b-versatile",  # Самая мощная модель Groq
                 messages=[
                     {
@@ -112,7 +120,9 @@ class GroqProvider(AIProvider):
         return "Groq (Llama 3.1)"
     
     def is_available(self) -> bool:
-        return self.client is not None
+        """Проверяет доступность Groq API"""
+        client = self._ensure_client()
+        return client is not None
     
     def _create_fallback_presentation(self, request: AIGenerationRequest) -> Dict[str, Any]:
         """Создает fallback презентацию"""
