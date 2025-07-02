@@ -57,7 +57,8 @@ async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     session: AsyncSession = Depends(get_session)
 ):
-    user = await session.query(User).filter(User.email == form_data.username).first()
+    result = await session.execute(select(User).where(User.email == form_data.username))
+    user = result.scalars().first()
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -129,7 +130,8 @@ async def google_callback(code: str, session: AsyncSession = Depends(get_session
     email = userinfo.get("email")
     username = userinfo.get("name") or email.split("@")[0]
     # Проверяем, есть ли пользователь
-    user = await session.query(User).filter(User.email == email).first()
+    result = await session.execute(select(User).where(User.email == email))
+    user = result.scalars().first()
     if not user:
         user = User(
             email=email,
@@ -158,7 +160,8 @@ async def email_verification_request(
     data: EmailVerificationRequest,
     session: AsyncSession = Depends(get_session)
 ):
-    user = await session.query(User).filter(User.email == data.email).first()
+    result = await session.execute(select(User).where(User.email == data.email))
+    user = result.scalars().first()
     if not user:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
     token = secrets.token_urlsafe(32)
@@ -169,7 +172,8 @@ async def email_verification_request(
 
 @router.get("/verify-email", response_model=EmailVerificationResponse)
 async def verify_email(token: str, session: AsyncSession = Depends(get_session)):
-    user = await session.query(User).filter(User.email_verification_token == token).first()
+    result = await session.execute(select(User).where(User.email_verification_token == token))
+    user = result.scalars().first()
     if not user:
         raise HTTPException(status_code=404, detail="Неверный токен")
     user.is_email_verified = True
