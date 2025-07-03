@@ -39,6 +39,10 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_SECRET: str = "your_google_client_secret"
     GOOGLE_REDIRECT_URI: str = "http://localhost:8000/auth/google-callback"
     
+    # Настройки Gmail для отправки писем
+    GMAIL_USER: str
+    GMAIL_APP_PASSWORD: str
+    
     @property
     def DATABASE_URL(self) -> str:
         return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
