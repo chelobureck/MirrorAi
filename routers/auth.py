@@ -167,7 +167,10 @@ async def email_verification_request(
         raise HTTPException(status_code=404, detail="Пользователь не найден")
     now = datetime.now(timezone.utc)
     # Ограничение: не чаще 1 раза в 60 секунд
-    if user.email_verification_sent_at and (now - user.email_verification_sent_at).total_seconds() < 60:
+    sent_at = user.email_verification_sent_at
+    if sent_at and sent_at.tzinfo is None:
+        sent_at = sent_at.replace(tzinfo=timezone.utc)
+    if sent_at and (now - sent_at).total_seconds() < 60:
         raise HTTPException(status_code=429, detail="Запросить новый код можно не чаще, чем раз в 60 секунд")
     token = secrets.token_urlsafe(32)
     user.email_verification_token = token
