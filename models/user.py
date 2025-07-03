@@ -18,4 +18,5 @@ class User(Base):
     is_email_verified = Column(Boolean, default=False)
     email_verification_token = Column(String, nullable=True)
     email_verification_sent_at = Column(DateTime(timezone=True), nullable=True)
+    email_verification_code = Column(String, nullable=True)
     preferences_id = Column(Integer, ForeignKey("userpreferences.id"), nullable=True) 

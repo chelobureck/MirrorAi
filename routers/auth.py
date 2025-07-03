@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Cookie
+from fastapi import APIRouter, Depends, HTTPException, status, Cookie, Body
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import timedelta, datetime, timezone
@@ -18,6 +18,7 @@ import httpx
 import secrets
 from sqlalchemy import select
 from utils.email import send_verification_email
+import random
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 settings = get_settings()
@@ -172,11 +173,14 @@ async def email_verification_request(
         sent_at = sent_at.replace(tzinfo=timezone.utc)
     if sent_at and (now - sent_at).total_seconds() < 60:
         raise HTTPException(status_code=429, detail="Запросить новый код можно не чаще, чем раз в 60 секунд")
+    # Генерируем токен и короткий код
     token = secrets.token_urlsafe(32)
+    code = str(random.randint(100000, 999999))
     user.email_verification_token = token
+    user.email_verification_code = code
     user.email_verification_sent_at = now
     await session.commit()
-    await send_verification_email(user.email, token)
+    await send_verification_email(user.email, token, code)
     return EmailVerificationResponse(message="Письмо отправлено")
 
 @router.get("/verify-email", response_model=EmailVerificationResponse)
@@ -197,4 +201,28 @@ async def verify_email(token: str, session: AsyncSession = Depends(get_session))
 
 @router.get("/me", response_model=UserResponse)
 async def get_me(current_user: User = Depends(get_current_user)):
-    return current_user 
+    return current_user
+
+@router.post("/verify-email-code", response_model=EmailVerificationResponse)
+async def verify_email_code(
+    email: str = Body(...),
+    code: str = Body(...),
+    session: AsyncSession = Depends(get_session)
+):
+    result = await session.execute(select(User).where(User.email == email))
+    user = result.scalars().first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+    now = datetime.now(timezone.utc)
+    # Проверка срока действия кода (5 минут)
+    sent_at = user.email_verification_sent_at
+    if not sent_at or (now - (sent_at if sent_at.tzinfo else sent_at.replace(tzinfo=timezone.utc))).total_seconds() > 300:
+        raise HTTPException(status_code=400, detail="Срок действия кода истёк. Запросите новый код.")
+    if user.email_verification_code != code:
+        raise HTTPException(status_code=400, detail="Неверный код подтверждения.")
+    user.is_email_verified = True
+    user.email_verification_token = None
+    user.email_verification_code = None
+    user.email_verification_sent_at = None
+    await session.commit()
+    return EmailVerificationResponse(message="Email подтверждён по коду") 
