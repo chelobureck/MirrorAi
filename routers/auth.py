@@ -191,7 +191,10 @@ async def verify_email(token: str, session: AsyncSession = Depends(get_session))
         raise HTTPException(status_code=404, detail="Неверный токен")
     now = datetime.now(timezone.utc)
     # Проверка срока действия токена (5 минут)
-    if not user.email_verification_sent_at or (now - user.email_verification_sent_at).total_seconds() > 300:
+    sent_at = user.email_verification_sent_at
+    if sent_at and sent_at.tzinfo is None:
+        sent_at = sent_at.replace(tzinfo=timezone.utc)
+    if not sent_at or (now - sent_at).total_seconds() > 300:
         raise HTTPException(status_code=400, detail="Срок действия токена истёк. Запросите новый код.")
     user.is_email_verified = True
     user.email_verification_token = None
