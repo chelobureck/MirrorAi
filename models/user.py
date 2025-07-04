@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, Text
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, Text, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from models.base import Base
@@ -15,11 +15,15 @@ class User(Base):
     credits = Column(Integer, default=100)  # Кредиты для использования AI
     is_email_verified = Column(Boolean, default=False)
     email_verification_token = Column(String, nullable=True)
+    email_verification_sent_at = Column(DateTime(timezone=True), nullable=True)
+    email_verification_code = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
     # Связи
     presentations = relationship("Presentation", back_populates="user")
+    boards = relationship("Board", back_populates="user")
+    preferences = relationship("UserPreferences", back_populates="user", uselist=False)
 
     def verify_password(self, password: str) -> bool:
         """Проверка пароля"""

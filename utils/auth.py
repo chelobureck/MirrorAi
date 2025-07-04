@@ -9,6 +9,7 @@ from models.base import get_session
 from models.user import User
 from schemas.user import TokenData
 from config.settings import get_settings
+from sqlalchemy import select
 
 settings = get_settings()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -50,7 +51,8 @@ async def get_current_user(
     except JWTError:
         raise credentials_exception
     
-    user = await session.query(User).filter(User.email == token_data.email).first()
+    result = await session.execute(select(User).where(User.email == token_data.email))
+    user = result.scalars().first()
     if user is None:
         raise credentials_exception
     return user
@@ -74,7 +76,8 @@ async def get_current_user_by_refresh_token(
             raise credentials_exception
     except JWTError:
         raise credentials_exception
-    user = await session.query(User).filter(User.email == email).first()
+    result = await session.execute(select(User).where(User.email == email))
+    user = result.scalars().first()
     if user is None:
         raise credentials_exception
     return user 

@@ -10,6 +10,7 @@ class Presentation(Base):
     title = Column(String)
     content = Column(JSON)  # Структура презентации
     user_id = Column(Integer, ForeignKey("users.id"))
+    board_id = Column(Integer, ForeignKey("boards.id"), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
@@ -19,4 +20,5 @@ class Presentation(Base):
     shared_at = Column(DateTime(timezone=True), nullable=True)
     views_count = Column(Integer, default=0)
 
-    user = relationship("User", back_populates="presentations") 
+    user = relationship("User", back_populates="presentations")
+    board = relationship("Board", back_populates="presentations") 

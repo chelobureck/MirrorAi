@@ -1,15 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
 from typing import List
 from models.base import get_session
-from models import User
+from models.user import User
 from models.presentation import Presentation
 from schemas.presentation import PresentationResponse, PresentationCreate
 from utils.auth import get_current_user
 from fastapi.responses import FileResponse
-from utils.pptx_generator import generate_presentation_pptx
+from utils.openai_client import generate_presentation_pptx
 import os
+from sqlalchemy import select
 
 router = APIRouter(prefix="/presentations", tags=["presentations"])
 
@@ -18,9 +18,7 @@ async def get_presentations(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
-    result = await session.execute(
-        select(Presentation).where(Presentation.user_id == current_user.id)
-    )
+    result = await session.execute(select(Presentation).where(Presentation.user_id == current_user.id))
     presentations = result.scalars().all()
     return presentations
 
@@ -30,12 +28,7 @@ async def get_presentation(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
-    result = await session.execute(
-        select(Presentation).where(
-            Presentation.id == presentation_id,
-            Presentation.user_id == current_user.id
-        )
-    )
+    result = await session.execute(select(Presentation).where(Presentation.id == presentation_id, Presentation.user_id == current_user.id))
     presentation = result.scalars().first()
     
     if not presentation:
@@ -77,10 +70,8 @@ async def update_presentation(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
-    db_presentation = await session.query(Presentation).filter(
-        Presentation.id == presentation_id,
-        Presentation.user_id == current_user.id
-    ).first()
+    result = await session.execute(select(Presentation).where(Presentation.id == presentation_id, Presentation.user_id == current_user.id))
+    db_presentation = result.scalars().first()
     if not db_presentation:
         raise HTTPException(status_code=404, detail="Presentation not found")
     db_presentation.title = presentation.title
@@ -96,10 +87,8 @@ async def delete_presentation(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
-    db_presentation = await session.query(Presentation).filter(
-        Presentation.id == presentation_id,
-        Presentation.user_id == current_user.id
-    ).first()
+    result = await session.execute(select(Presentation).where(Presentation.id == presentation_id, Presentation.user_id == current_user.id))
+    db_presentation = result.scalars().first()
     if not db_presentation:
         raise HTTPException(status_code=404, detail="Presentation not found")
     await session.delete(db_presentation)
@@ -112,10 +101,8 @@ async def download_presentation(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
-    db_presentation = await session.query(Presentation).filter(
-        Presentation.id == presentation_id,
-        Presentation.user_id == current_user.id
-    ).first()
+    result = await session.execute(select(Presentation).where(Presentation.id == presentation_id, Presentation.user_id == current_user.id))
+    db_presentation = result.scalars().first()
     if not db_presentation:
         raise HTTPException(status_code=404, detail="Presentation not found")
     pptx_path = await generate_presentation_pptx(db_presentation.content)

@@ -8,6 +8,9 @@ from routers import (
     auth, 
     html_generator,
     presentations,
+    boards,
+    templates,
+    preferences,
     public
 )
 
@@ -31,6 +34,9 @@ app.add_middleware(
 app.include_router(auth.router, prefix=settings.API_V1_STR, tags=["auth"])
 app.include_router(html_generator.router, prefix=settings.API_V1_STR, tags=["html-generation"])
 app.include_router(presentations.router, prefix=settings.API_V1_STR, tags=["presentations"])
+app.include_router(boards.router, prefix=settings.API_V1_STR, tags=["boards"])
+app.include_router(templates.router, prefix=settings.API_V1_STR, tags=["templates"])
+app.include_router(preferences.router, prefix=settings.API_V1_STR, tags=["preferences"])
 app.include_router(public.router, prefix=settings.API_V1_STR, tags=["public"])
 
 
