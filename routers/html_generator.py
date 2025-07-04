@@ -7,7 +7,7 @@ from fastapi_limiter.depends import RateLimiter
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Dict, Any
 from models.base import get_session
-from models.user import User
+from models import User
 from models.presentation import Presentation
 from utils.auth import get_current_user
 from ai_services import ai_manager, AIGenerationRequest

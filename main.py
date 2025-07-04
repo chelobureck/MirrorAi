@@ -7,6 +7,7 @@ from models.base import Base, engine
 from routers import (
     auth, 
     html_generator,
+    presentations,
     public
 )
 
@@ -29,6 +30,7 @@ app.add_middleware(
 # Подключаем роутеры
 app.include_router(auth.router, prefix=settings.API_V1_STR, tags=["auth"])
 app.include_router(html_generator.router, prefix=settings.API_V1_STR, tags=["html-generation"])
+app.include_router(presentations.router, prefix=settings.API_V1_STR, tags=["presentations"])
 app.include_router(public.router, prefix=settings.API_V1_STR, tags=["public"])
 
 
