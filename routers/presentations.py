@@ -7,7 +7,7 @@ from models.presentation import Presentation
 from schemas.presentation import PresentationResponse, PresentationCreate
 from utils.auth import get_current_user
 from fastapi.responses import FileResponse
-from utils.openai_client import generate_presentation_pptx
+
 import os
 from sqlalchemy import select
 
