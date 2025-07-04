@@ -6,13 +6,8 @@ from config.settings import get_settings
 from models.base import Base, engine
 from routers import (
     auth, 
-    presentations, 
-    generate_v2, 
-    public, 
-    export, 
-    boards, 
-    templates, 
-    preferences
+    html_generator,
+    public
 )
 
 settings = get_settings()
@@ -33,13 +28,8 @@ app.add_middleware(
 
 # Подключаем роутеры
 app.include_router(auth.router, prefix=settings.API_V1_STR, tags=["auth"])
-app.include_router(presentations.router, prefix=settings.API_V1_STR, tags=["presentations"])
-app.include_router(generate_v2.router, prefix=settings.API_V1_STR, tags=["generate"])
+app.include_router(html_generator.router, prefix=settings.API_V1_STR, tags=["html-generation"])
 app.include_router(public.router, prefix=settings.API_V1_STR, tags=["public"])
-app.include_router(export.router, prefix=settings.API_V1_STR, tags=["export"])
-app.include_router(boards.router, prefix=settings.API_V1_STR, tags=["boards"])
-app.include_router(templates.router, prefix=settings.API_V1_STR, tags=["templates"])
-app.include_router(preferences.router, prefix=settings.API_V1_STR, tags=["user-preferences"])
 
 
 @app.on_event("startup")
@@ -67,11 +57,19 @@ async def api_health():
     """Проверка работоспособности API"""
     return {
         "status": "healthy",
-        "message": "SayDeck API v1 работает",
+        "message": "SayDeck API v1 - Groq HTML Презентации",
         "endpoints": {
-            "generate": "/api/v1/generate/providers",
+            "generate_html": "/api/v1/generate/ (POST)",
+            "generate_json": "/api/v1/generate/json (POST)",
             "presentations": "/api/v1/presentations",
             "public": "/api/v1/public",
             "export": "/api/v1/export"
-        }
+        },
+        "features": [
+            "Создание HTML презентаций из текста (только Groq)",
+            "Современный дизайн с CSS анимациями", 
+            "Автоматическое определение параметров",
+            "Сохранение в базу данных",
+            "Навигация по слайдам"
+        ]
     }

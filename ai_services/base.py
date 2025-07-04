@@ -13,22 +13,12 @@ class AIGenerationRequest(BaseModel):
     animation: bool = False
     template: Optional[str] = None
 
-class AITranscriptionRequest(BaseModel):
-    """Запрос для транскрипции аудио"""
-    audio_file_path: str
-    language: str = "ru"
-
 class AIProvider(ABC):
     """Базовый класс для AI провайдеров"""
     
     @abstractmethod
     async def generate_presentation(self, request: AIGenerationRequest) -> Dict[str, Any]:
         """Генерирует структуру презентации"""
-        pass
-    
-    @abstractmethod
-    async def transcribe_audio(self, request: AITranscriptionRequest) -> str:
-        """Транскрибирует аудио файл"""
         pass
     
     @abstractmethod

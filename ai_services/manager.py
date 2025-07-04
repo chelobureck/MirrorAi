@@ -3,27 +3,21 @@ AI Provider Manager - управляет всеми AI провайдерами
 """
 from typing import Dict, List, Optional
 from enum import Enum
-from .base import AIProvider, AIGenerationRequest, AITranscriptionRequest
-from .openai_provider import OpenAIProvider
+from .base import AIProvider, AIGenerationRequest
 from .groq_provider import GroqProvider
-from .ollama_provider import OllamaProvider
 
 class AIProviderType(Enum):
     """Типы AI провайдеров"""
-    OPENAI = "openai"
     GROQ = "groq"
-    OLLAMA = "ollama"
 
 class AIProviderManager:
-    """Менеджер для управления AI провайдерами"""
+    """Менеджер для управления AI провайдерами - только Groq"""
     
     def __init__(self):
         self.providers: Dict[AIProviderType, AIProvider] = {
-            AIProviderType.OPENAI: OpenAIProvider(),
             AIProviderType.GROQ: GroqProvider(),
-            AIProviderType.OLLAMA: OllamaProvider(),
         }
-        self.default_provider = AIProviderType.GROQ  # Groq как основной
+        self.default_provider = AIProviderType.GROQ  # Только Groq
     
     def get_provider(self, provider_type: Optional[AIProviderType] = None) -> AIProvider:
         """Получает провайдера по типу"""
@@ -49,16 +43,7 @@ class AIProviderManager:
         return available
     
     def get_best_available_provider(self) -> AIProvider:
-        """Возвращает лучший доступный провайдер"""
-        # Приоритет: Groq > OpenAI > Ollama
-        priority_order = [AIProviderType.GROQ, AIProviderType.OPENAI, AIProviderType.OLLAMA]
-        
-        for provider_type in priority_order:
-            provider = self.providers[provider_type]
-            if provider.is_available():
-                return provider
-        
-        # Если ни один не доступен, возвращаем первый (с fallback)
+        """Возвращает Groq провайдер"""
         return self.providers[AIProviderType.GROQ]
     
     async def generate_presentation(
@@ -82,23 +67,6 @@ class AIProviderManager:
         }
         
         return result
-    
-    async def transcribe_audio(
-        self, 
-        request: AITranscriptionRequest, 
-        provider_type: Optional[AIProviderType] = None
-    ) -> str:
-        """Транскрибирует аудио через указанный или лучший провайдер"""
-        if provider_type:
-            provider = self.get_provider(provider_type)
-        else:
-            # Для транскрипции предпочитаем OpenAI (Whisper)
-            if self.providers[AIProviderType.OPENAI].is_available():
-                provider = self.providers[AIProviderType.OPENAI]
-            else:
-                provider = self.get_best_available_provider()
-        
-        return await provider.transcribe_audio(request)
 
 # Глобальный экземпляр менеджера
 ai_manager = AIProviderManager()

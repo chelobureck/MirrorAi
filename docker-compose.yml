@@ -22,7 +22,6 @@ services:
         condition: service_started
     restart: on-failure
     volumes:
-      - ./uploads:/app/uploads
       # Монтируем исходный код для live reload
       - .:/app
     networks:

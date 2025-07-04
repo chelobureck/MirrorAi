@@ -5,7 +5,7 @@ import json
 from typing import Dict, Any
 from groq import Groq
 from config.settings import get_settings
-from .base import AIProvider, AIGenerationRequest, AITranscriptionRequest
+from .base import AIProvider, AIGenerationRequest
 
 settings = get_settings()
 
@@ -39,30 +39,34 @@ class GroqProvider(AIProvider):
         prompt = f"""
         Создай профессиональную презентацию на {request.language} языке.
         
-        ПАРАМЕТРЫ:
-        - Количество слайдов: {request.slides_count}
-        - Исходный текст: {request.text}
-        - Анимация: {"включена" if request.animation else "отключена"}
+        АНАЛИЗИРУЙ ТЕКСТ И САМОСТОЯТЕЛЬНО ОПРЕДЕЛИ:
+        - Оптимальное количество слайдов (обычно 3-7, зависит от объема контента)
+        - Подходящую структуру презентации 
+        - Тип контента и стиль подачи
         
         ТРЕБОВАНИЯ:
         1. Верни ТОЛЬКО валидный JSON без markdown блоков
-        2. Создай логичную структуру от введения к заключению
-        3. Каждый слайд должен быть информативным и не превышать 150 слов
-        4. Используй профессиональный деловой тон
+        2. Создай логичную структуру: введение → основная часть → заключение
+        3. Каждый слайд должен быть информативным (50-150 слов)
+        4. Используй современный профессиональный тон
+        5. ОБЯЗАТЕЛЬНО используй HTML теги для красивого форматирования
+        6. Поддерживаемые HTML теги: <h1>, <h2>, <h3>, <p>, <strong>, <em>, <ul>, <li>, <br>, <div>, <span>
         
         ФОРМАТ JSON:
         {{
             "title": "Заголовок презентации",
             "slides": [
                 {{
-                    "title": "Заголовок слайда",
-                    "content": "Основной текст слайда",
+                    "title": "<h1>Заголовок слайда</h1>",
+                    "content": "<p>Основной текст с <strong>важными моментами</strong> и <em>акцентами</em>.</p><ul><li>Пункт списка 1</li><li>Пункт списка 2</li></ul>",
                     "type": "title|content|conclusion"
                 }}
             ]
         }}
         
-        Проанализируй исходный текст и создай структурированную презентацию с четкой логикой изложения.
+        ИСХОДНЫЙ ТЕКСТ ДЛЯ АНАЛИЗА: {request.text}
+        
+        Проанализируй контент, определи оптимальное количество слайдов и создай структурированную презентацию с HTML форматированием.
         """
         
         try:
@@ -110,11 +114,6 @@ class GroqProvider(AIProvider):
         except Exception as e:
             print(f"❌ Groq generation error: {e}")
             return self._create_fallback_presentation(request)
-    
-    async def transcribe_audio(self, request: AITranscriptionRequest) -> str:
-        """Groq пока не поддерживает транскрипцию, используем fallback"""
-        # Groq не поддерживает Whisper, возвращаем заглушку
-        return f"[Транскрипция через Groq пока недоступна для файла: {request.audio_file_path}]"
     
     def get_provider_name(self) -> str:
         return "Groq (Llama 3.1)"
