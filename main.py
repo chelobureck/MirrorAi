@@ -11,7 +11,8 @@ from routers import (
     boards,
     templates,
     preferences,
-    public
+    public,
+    enhanced_generator
 )
 
 settings = get_settings()
@@ -38,6 +39,7 @@ app.include_router(boards.router, prefix=settings.API_V1_STR, tags=["boards"])
 app.include_router(templates.router, prefix=settings.API_V1_STR, tags=["templates"])
 app.include_router(preferences.router, prefix=settings.API_V1_STR, tags=["preferences"])
 app.include_router(public.router, prefix=settings.API_V1_STR, tags=["public"])
+app.include_router(enhanced_generator.router, tags=["enhanced-generation"])
 
 
 @app.on_event("startup")
@@ -65,19 +67,28 @@ async def api_health():
     """Проверка работоспособности API"""
     return {
         "status": "healthy",
-        "message": "SayDeck API v1 - Groq HTML Презентации",
+        "message": "SayDeck API v1 - AI Презентации с изображениями",
         "endpoints": {
             "generate_html": "/api/v1/generate/ (POST)",
             "generate_json": "/api/v1/generate/json (POST)",
+            "enhanced_generate": "/api/v1/enhanced/generate (POST)",
+            "search_images": "/api/v1/enhanced/search-images (GET)",
             "presentations": "/api/v1/presentations",
             "public": "/api/v1/public",
             "export": "/api/v1/export"
         },
         "features": [
-            "Создание HTML презентаций из текста (только Groq)",
+            "Создание HTML презентаций из текста (Groq/OpenAI)",
+            "Автоматический поиск и вставка изображений (Pexels API)",
             "Современный дизайн с CSS анимациями", 
             "Автоматическое определение параметров",
             "Сохранение в базу данных",
-            "Навигация по слайдам"
+            "Навигация по слайдам",
+            "Умный анализ контента для подбора изображений"
+        ],
+        "new_services": [
+            "Enhanced Generator - расширенная генерация с изображениями",
+            "Image Service - поиск изображений через Pexels API",
+            "Smart Content Analysis - анализ текста для подбора изображений"
         ]
     }

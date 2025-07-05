@@ -14,6 +14,7 @@ python-multipart>=0.0.6
 
 # API & HTTP
 httpx>=0.25.0
+aiohttp>=3.9.0
 aiofiles>=23.0.0
 
 # Configuration & Environment

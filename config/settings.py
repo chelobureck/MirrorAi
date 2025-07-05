@@ -31,6 +31,9 @@ class Settings(BaseSettings):
     # Настройки Groq
     GROQ_API_KEY: str = "your_groq_key"
     
+    # Настройки Pexels API для поиска изображений
+    PEXELS_API_KEY: str = "your_pexels_api_key"
+    
     # Настройки Ollama (локальная Llama)
     OLLAMA_BASE_URL: str = "http://localhost:11434"
     OLLAMA_MODEL: str = "llama3.1:8b"
