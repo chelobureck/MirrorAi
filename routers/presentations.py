@@ -7,9 +7,12 @@ from models.presentation import Presentation
 from schemas.presentation import PresentationResponse, PresentationCreate
 from utils.auth import get_current_user
 from fastapi.responses import FileResponse
-from utils.openai_client import generate_presentation_pptx
+
 import os
 from sqlalchemy import select
+
+# Import or define generate_presentation_pptx
+from utils.pptx_generator import generate_presentation_pptx  # Adjust the import path as needed
 
 router = APIRouter(prefix="/presentations", tags=["presentations"])
 

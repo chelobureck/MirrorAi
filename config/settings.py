@@ -28,6 +28,16 @@ class Settings(BaseSettings):
     # Настройки OpenAI
     OPENAI_API_KEY: str
     
+    # Настройки Groq
+    GROQ_API_KEY: str = "your_groq_key"
+    
+    # Настройки Pexels API для поиска изображений
+    PEXELS_API_KEY: str = "your_pexels_api_key"
+    
+    # Настройки Ollama (локальная Llama)
+    OLLAMA_BASE_URL: str = "http://localhost:11434"
+    OLLAMA_MODEL: str = "llama3.1:8b"
+    
     # Настройки CORS
     BACKEND_CORS_ORIGINS: list[str] = ["*"]
     
@@ -50,12 +60,6 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = True
-
-DATABASE_URL = f"postgresql+asyncpg://{os.getenv('DATABASE_USER')}:" \
-            f"{os.getenv('DATABASE_PASSWORD')}@" \
-            f"{os.getenv('DATABASE_HOST')}:" \
-            f"{os.getenv('DATABASE_PORT')}/" \
-            f"{os.getenv('DATABASE_NAME')}"
 
 @lru_cache()
 def get_settings() -> Settings:
