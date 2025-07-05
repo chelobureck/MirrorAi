@@ -11,6 +11,9 @@ from fastapi.responses import FileResponse
 import os
 from sqlalchemy import select
 
+# Import or define generate_presentation_pptx
+from utils.pptx_generator import generate_presentation_pptx  # Adjust the import path as needed
+
 router = APIRouter(prefix="/presentations", tags=["presentations"])
 
 @router.get("/", response_model=List[PresentationResponse])
