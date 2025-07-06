@@ -14,253 +14,253 @@ from ai_services import ai_manager, AIGenerationRequest
 
 router = APIRouter(prefix="/generate", tags=["html-generation"])
 
-# def create_modern_html_presentation(presentation_data: Dict[str, Any]) -> str:
-# """Создает полную HTML страницу с современными стилями"""
+def create_modern_html_presentation(presentation_data: Dict[str, Any]) -> str:
+"""Создает полную HTML страницу с современными стилями"""
 
-# title = presentation_data.get("title", "Презентация")
-# slides = presentation_data.get("slides", [])
+title = presentation_data.get("title", "Презентация")
+slides = presentation_data.get("slides", [])
 
-# # Генерируем HTML для слайдов
-# slides_html = ""
-# for i, slide in enumerate(slides):
-#     slide_title = slide.get("title", "")
-#     slide_content = slide.get("content", "")
-#     slide_type = slide.get("type", "content")
+# Генерируем HTML для слайдов
+slides_html = ""
+for i, slide in enumerate(slides):
+    slide_title = slide.get("title", "")
+    slide_content = slide.get("content", "")
+    slide_type = slide.get("type", "content")
     
-#     # Добавляем класс для типа слайда
-#     slide_class = f"slide slide-{slide_type}"
-#     if i == 0:
-#         slide_class += " active"
+    # Добавляем класс для типа слайда
+    slide_class = f"slide slide-{slide_type}"
+    if i == 0:
+        slide_class += " active"
         
-#     slides_html += f"""
-#     <div class="{slide_class}" data-slide="{i}">
-#         <div class="slide-content">
-#             {slide_title}
-#             {slide_content}
-#         </div>
-#     </div>
-#     """
+    slides_html += f"""
+    <div class="{slide_class}" data-slide="{i}">
+        <div class="slide-content">
+            {slide_title}
+            {slide_content}
+        </div>
+    </div>
+    """
 
-# # Создаем полную HTML страницу с современными стилями
-# html_content = f"""
-# <!DOCTYPE html>
-# <html lang="ru">
-# <head>
-# <meta charset="UTF-8">
-# <meta name="viewport" content="width=device-width, initial-scale=1.0">
-# <title>{title}</title>
-# <style>
-#     * {{
-#         margin: 0;
-#         padding: 0;
-#         box-sizing: border-box;
-#     }}
+# Создаем полную HTML страницу с современными стилями
+html_content = f"""
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{title}</title>
+<style>
+    * {{
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }}
     
-#     body {{
-#         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-#         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-#         min-height: 100vh;
-#         display: flex;
-#         align-items: center;
-#         justify-content: center;
-#         color: #333;
-#     }}
+    body {{
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #333;
+    }}
     
-#     .presentation-container {{
-#         width: 90%;
-#         max-width: 900px;
-#         background: white;
-#         border-radius: 20px;
-#         box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
-#         overflow: hidden;
-#         position: relative;
-#     }}
+    .presentation-container {{
+        width: 90%;
+        max-width: 900px;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        position: relative;
+    }}
     
-#     .presentation-header {{
-#         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-#         color: white;
-#         padding: 30px;
-#         text-align: center;
-#     }}
+    .presentation-header {{
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        text-align: center;
+    }}
     
-#     .presentation-title {{
-#         font-size: 2.5rem;
-#         font-weight: 700;
-#         margin-bottom: 10px;
-#         text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-#     }}
+    .presentation-title {{
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }}
     
-#     .slide {{
-#         display: none;
-#         padding: 40px;
-#         min-height: 500px;
-#         animation: fadeIn 0.5s ease-in-out;
-#     }}
+    .slide {{
+        display: none;
+        padding: 40px;
+        min-height: 500px;
+        animation: fadeIn 0.5s ease-in-out;
+    }}
     
-#     .slide.active {{
-#         display: block;
-#     }}
+    .slide.active {{
+        display: block;
+    }}
     
-#     .slide-content h1 {{
-#         color: #667eea;
-#         font-size: 2.2rem;
-#         margin-bottom: 20px;
-#         border-bottom: 3px solid #667eea;
-#         padding-bottom: 10px;
-#     }}
+    .slide-content h1 {{
+        color: #667eea;
+        font-size: 2.2rem;
+        margin-bottom: 20px;
+        border-bottom: 3px solid #667eea;
+        padding-bottom: 10px;
+    }}
     
-#     .slide-content h2 {{
-#         color: #764ba2;
-#         font-size: 1.8rem;
-#         margin-bottom: 15px;
-#         margin-top: 25px;
-#     }}
+    .slide-content h2 {{
+        color: #764ba2;
+        font-size: 1.8rem;
+        margin-bottom: 15px;
+        margin-top: 25px;
+    }}
     
-#     .slide-content h3 {{
-#         color: #667eea;
-#         font-size: 1.4rem;
-#         margin-bottom: 12px;
-#         margin-top: 20px;
-#     }}
+    .slide-content h3 {{
+        color: #667eea;
+        font-size: 1.4rem;
+        margin-bottom: 12px;
+        margin-top: 20px;
+    }}
     
-#     .slide-content p {{
-#         font-size: 1.1rem;
-#         line-height: 1.7;
-#         margin-bottom: 15px;
-#         color: #555;
-#     }}
+    .slide-content p {{
+        font-size: 1.1rem;
+        line-height: 1.7;
+        margin-bottom: 15px;
+        color: #555;
+    }}
     
-#     .slide-content strong {{
-#         color: #667eea;
-#         font-weight: 600;
-#     }}
+    .slide-content strong {{
+        color: #667eea;
+        font-weight: 600;
+    }}
     
-#     .slide-content em {{
-#         color: #764ba2;
-#         font-style: italic;
-#     }}
+    .slide-content em {{
+        color: #764ba2;
+        font-style: italic;
+    }}
     
-#     .slide-content ul {{
-#         margin: 20px 0;
-#         padding-left: 0;
-#     }}
+    .slide-content ul {{
+        margin: 20px 0;
+        padding-left: 0;
+    }}
     
-#     .slide-content li {{
-#         list-style: none;
-#         margin: 12px 0;
-#         padding: 12px 20px;
-#         background: linear-gradient(135deg, #f8f9ff 0%, #e8edff 100%);
-#         border-left: 4px solid #667eea;
-#         border-radius: 8px;
-#         font-size: 1.05rem;
-#         position: relative;
-#     }}
+    .slide-content li {{
+        list-style: none;
+        margin: 12px 0;
+        padding: 12px 20px;
+        background: linear-gradient(135deg, #f8f9ff 0%, #e8edff 100%);
+        border-left: 4px solid #667eea;
+        border-radius: 8px;
+        font-size: 1.05rem;
+        position: relative;
+    }}
     
-#     .slide-content li:before {{
-#         content: "→";
-#         color: #667eea;
-#         font-weight: bold;
-#         margin-right: 10px;
-#     }}
+    .slide-content li:before {{
+        content: "→";
+        color: #667eea;
+        font-weight: bold;
+        margin-right: 10px;
+    }}
     
-#     .slide-title {{
-#         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-#         color: white;
-#         text-align: center;
-#         padding: 60px 40px;
-#     }}
+    .slide-title {{
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        text-align: center;
+        padding: 60px 40px;
+    }}
     
-#     .slide-conclusion {{
-#         background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
-#         color: white;
-#         padding: 40px;
-#     }}
+    .slide-conclusion {{
+        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+        color: white;
+        padding: 40px;
+    }}
     
-#     .slide-conclusion h1,
-#     .slide-conclusion h2,
-#     .slide-conclusion h3 {{
-#         color: white;
-#     }}
+    .slide-conclusion h1,
+    .slide-conclusion h2,
+    .slide-conclusion h3 {{
+        color: white;
+    }}
     
-#     .navigation {{
-#         position: absolute;
-#         bottom: 20px;
-#         left: 50%;
-#         transform: translateX(-50%);
-#         display: flex;
-#         gap: 10px;
-#     }}
+    .navigation {{
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 10px;
+    }}
     
-#     .nav-btn {{
-#         background: #667eea;
-#         color: white;
-#         border: none;
-#         padding: 12px 24px;
-#         border-radius: 25px;
-#         cursor: pointer;
-#         font-size: 14px;
-#         font-weight: 500;
-#         transition: all 0.3s ease;
-#         box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-#     }}
+    .nav-btn {{
+        background: #667eea;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 25px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }}
     
-#     .nav-btn:hover {{
-#         background: #5a67d8;
-#         transform: translateY(-2px);
-#         box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-#     }}
+    .nav-btn:hover {{
+        background: #5a67d8;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }}
     
-#     .nav-btn:disabled {{
-#         background: #ccc;
-#         cursor: not-allowed;
-#         transform: none;
-#         box-shadow: none;
-#     }}
+    .nav-btn:disabled {{
+        background: #ccc;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }}
     
-#     .slide-counter {{
-#         position: absolute;
-#         top: 20px;
-#         right: 20px;
-#         background: rgba(102, 126, 234, 0.1);
-#         padding: 8px 15px;
-#         border-radius: 20px;
-#         font-size: 14px;
-#         color: #667eea;
-#         font-weight: 500;
-#     }}
+    .slide-counter {{
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background: rgba(102, 126, 234, 0.1);
+        padding: 8px 15px;
+        border-radius: 20px;
+        font-size: 14px;
+        color: #667eea;
+        font-weight: 500;
+    }}
     
-#     @keyframes fadeIn {{
-#         from {{ opacity: 0; transform: translateY(20px); }}
-#         to {{ opacity: 1; transform: translateY(0); }}
-#     }}
+    @keyframes fadeIn {{
+        from {{ opacity: 0; transform: translateY(20px); }}
+        to {{ opacity: 1; transform: translateY(0); }}
+    }}
     
-#     @media (max-width: 768px) {{
-#         .presentation-container {{ width: 95%; }}
-#         .slide {{ padding: 20px; }}
-#         .presentation-title {{ font-size: 2rem; }}
-#         .slide-content h1 {{ font-size: 1.8rem; }}
-#     }}
-# </style>
-# </head>
-# <body>
-# <div class="presentation-container">
-#     <div class="presentation-header">
-#         <h1 class="presentation-title">{title}</h1>
-#         <div class="slide-counter">
-#             <span id="current-slide">1</span> / <span id="total-slides">{len(slides)}</span>
-#         </div>
-#     </div>
+    @media (max-width: 768px) {{
+        .presentation-container {{ width: 95%; }}
+        .slide {{ padding: 20px; }}
+        .presentation-title {{ font-size: 2rem; }}
+        .slide-content h1 {{ font-size: 1.8rem; }}
+    }}
+</style>
+</head>
+<body>
+<div class="presentation-container">
+    <div class="presentation-header">
+        <h1 class="presentation-title">{title}</h1>
+        <div class="slide-counter">
+            <span id="current-slide">1</span> / <span id="total-slides">{len(slides)}</span>
+        </div>
+    </div>
     
-#     <div class="slides-container">
-#         {slides_html}
-#     </div>
-# </div>
+    <div class="slides-container">
+        {slides_html}
+    </div>
+</div>
 
-# </body>
-# </html>
-# """
+</body>
+</html>
+"""
 
-# return html_content
+return html_content
 
 @router.post("/", response_class=HTMLResponse, dependencies=[Depends(RateLimiter(times=10, seconds=60))])
 async def generate_html_presentation(
