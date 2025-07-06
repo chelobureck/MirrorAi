@@ -71,7 +71,7 @@ class GroqProvider(AIProvider):
         
         try:
             response = client.chat.completions.create(
-                model="llama-3.1-70b-versatile",  # Самая мощная модель Groq
+                model="meta-llama/llama-4-scout-17b-16e-instruct",  # Самая мощная модель Groq
                 messages=[
                     {
                         "role": "system", 
