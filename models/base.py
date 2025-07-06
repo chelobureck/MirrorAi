@@ -5,12 +5,23 @@ from config.settings import get_settings
 import ssl
 
 settings = get_settings()
-ssl_context = ssl.create_default_context()
-engine = create_async_engine(
-    settings.DATABASE_URL,
-    echo=True,
-    connect_args={"ssl": ssl_context}
-)
+
+# Настройка соединения в зависимости от типа базы данных
+if "sqlite" in settings.DATABASE_URL:
+    # Для SQLite не нужны SSL настройки
+    engine = create_async_engine(
+        settings.DATABASE_URL,
+        echo=True
+    )
+else:
+    # Для PostgreSQL с SSL настройками
+    ssl_context = ssl.create_default_context()
+    engine = create_async_engine(
+        settings.DATABASE_URL,
+        echo=True,
+        connect_args={"ssl": ssl_context}
+    )
+
 async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 Base = declarative_base()
 

@@ -55,7 +55,12 @@ class Settings(BaseSettings):
     
     @property
     def DATABASE_URL(self) -> str:
-        return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+        # Для локальной разработки используем SQLite
+        import os
+        if os.getenv("USE_POSTGRES", "false").lower() == "true":
+            return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}?ssl=false"
+        else:
+            return "sqlite+aiosqlite:///./saydeck.db"
     
     class Config:
         env_file = ".env"

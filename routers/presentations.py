@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 from models.base import get_session
@@ -6,13 +7,12 @@ from models.user import User
 from models.presentation import Presentation
 from schemas.presentation import PresentationResponse, PresentationCreate
 from utils.auth import get_current_user
-from fastapi.responses import FileResponse
 
 import os
 from sqlalchemy import select
 
-# Import or define generate_presentation_pptx
-from utils.pptx_generator import generate_presentation_pptx  # Adjust the import path as needed
+# Import PPTX generator
+from utils.pptx_generator import generate_presentation_pptx
 
 router = APIRouter(prefix="/presentations", tags=["presentations"])
 
@@ -108,5 +108,18 @@ async def download_presentation(
     db_presentation = result.scalars().first()
     if not db_presentation:
         raise HTTPException(status_code=404, detail="Presentation not found")
-    pptx_path = await generate_presentation_pptx(db_presentation.content)
-    return FileResponse(pptx_path, filename=f"presentation_{presentation_id}.pptx") 
+    
+    try:
+        # Генерируем PPTX файл
+        pptx_path = await generate_presentation_pptx(db_presentation.content)
+        return FileResponse(
+            pptx_path, 
+            filename=f"presentation_{presentation_id}.pptx",
+            media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation"
+        )
+    except Exception as e:
+        # В случае ошибки возвращаем JSON с данными презентации
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to generate PPTX: {str(e)}"
+        ) 
