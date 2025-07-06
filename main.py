@@ -15,6 +15,7 @@ from routers import (
     enhanced_generator,
     main_generation
 )
+from services.template_service import TemplateService
 
 settings = get_settings()
 app = FastAPI(
@@ -59,6 +60,10 @@ async def startup():
     await FastAPILimiter.init(redis_client)
     
     print("🚀 База данных и Redis успешно инициализированы!")
+
+    from models.base import get_session
+    async with get_session() as session:
+        await TemplateService.create_builtin_templates_in_db(session, user_id=1)
 
 @app.get("/")
 async def root():

@@ -275,6 +275,29 @@ class TemplateService:
         """Список всех встроенных шаблонов"""
         return list(BUILTIN_TEMPLATES.values())
 
+    @staticmethod
+    async def create_builtin_templates_in_db(session: AsyncSession, user_id: int = 1):
+        """Загрузить все встроенные шаблоны в БД, если их там нет"""
+        from models.template import Template
+        for tpl in BUILTIN_TEMPLATES.values():
+            # Проверяем, есть ли уже такой шаблон
+            result = await session.execute(
+                select(Template).where(Template.public_id == tpl["id"])
+            )
+            exists = result.scalar_one_or_none()
+            if not exists:
+                template = Template(
+                    public_id=tpl["id"],
+                    title=tpl["title"],
+                    content={},
+                    html_content=tpl["html_content"],
+                    original_presentation_id=0,
+                    user_id=user_id,
+                    is_public=True
+                )
+                session.add(template)
+        await session.commit()
+
 
 # Глобальный экземпляр сервиса
 template_service = TemplateService()
