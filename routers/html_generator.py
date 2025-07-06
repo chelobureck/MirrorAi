@@ -15,36 +15,37 @@ from ai_services import ai_manager, AIGenerationRequest
 router = APIRouter(prefix="/generate", tags=["html-generation"])
 
 def create_modern_html_presentation(presentation_data: Dict[str, Any]) -> str:
-"""Создает полную HTML страницу с современными стилями"""
+    """Создает полную HTML страницу с современными стилями"""
 
-title = presentation_data.get("title", "Презентация")
-slides = presentation_data.get("slides", [])
+    title = presentation_data.get("title", "Презентация")
+    slides = presentation_data.get("slides", [])
 
-# Генерируем HTML для слайдов
-slides_html = ""
-for i, slide in enumerate(slides):
-    slide_title = slide.get("title", "")
-    slide_content = slide.get("content", "")
-    slide_type = slide.get("type", "content")
-    
-    # Добавляем класс для типа слайда
-    slide_class = f"slide slide-{slide_type}"
-    if i == 0:
-        slide_class += " active"
+    # Генерируем HTML для слайдов
+    slides_html = ""
+    for i, slide in enumerate(slides):
+        slide_title = slide.get("title", "")
+        slide_content = slide.get("content", "")
+        slide_type = slide.get("type", "content")
         
-    slides_html += f"""
-    <div class="{slide_class}" data-slide="{i}">
-        <div class="slide-content">
-            {slide_title}
-            {slide_content}
+        # Добавляем класс для типа слайда
+        slide_class = f"slide slide-{slide_type}"
+        if i == 0:
+            slide_class += " active"
+            
+        slides_html += f"""
+        <div class="{slide_class}" data-slide="{i}">
+            <div class="slide-content">
+                {slide_title}
+                {slide_content}
+            </div>
         </div>
-    </div>
-    """
+        """
 
-# Создаем полную HTML страницу с современными стилями
-html_content = f""""""
+    # Создаем полную HTML страницу с современными стилями
+    html_content = f""""""  
 
-return html_content
+    return html_content
+
 
 @router.post("/", response_class=HTMLResponse, dependencies=[Depends(RateLimiter(times=10, seconds=60))])
 async def generate_html_presentation(
