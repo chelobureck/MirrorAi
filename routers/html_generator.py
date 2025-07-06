@@ -261,49 +261,6 @@ def create_modern_html_presentation(presentation_data: Dict[str, Any]) -> str:
         </div>
     </div>
     
-    <script>
-        let currentSlide = 0;
-        const totalSlides = {len(slides)};
-        
-        function showSlide(n) {{
-            const slides = document.querySelectorAll('.slide');
-            
-            if (n >= totalSlides) currentSlide = 0;
-            if (n < 0) currentSlide = totalSlides - 1;
-            
-            slides.forEach(slide => slide.classList.remove('active'));
-            slides[currentSlide].classList.add('active');
-            
-            document.getElementById('current-slide').textContent = currentSlide + 1;
-            
-            // Обновляем состояние кнопок
-            document.getElementById('prev-btn').disabled = currentSlide === 0;
-            document.getElementById('next-btn').disabled = currentSlide === totalSlides - 1;
-        }}
-        
-        function nextSlide() {{
-            if (currentSlide < totalSlides - 1) {{
-                currentSlide++;
-                showSlide(currentSlide);
-            }}
-        }}
-        
-        function previousSlide() {{
-            if (currentSlide > 0) {{
-                currentSlide--;
-                showSlide(currentSlide);
-            }}
-        }}
-        
-        // Инициализация
-        showSlide(0);
-        
-        // Навигация с клавиатуры
-        document.addEventListener('keydown', function(e) {{
-            if (e.key === 'ArrowRight' || e.key === ' ') nextSlide();
-            if (e.key === 'ArrowLeft') previousSlide();
-        }});
-    </script>
 </body>
 </html>
     """
