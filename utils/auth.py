@@ -3,7 +3,7 @@ from typing import Optional
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import OAuth2PasswordBearer, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 from models.base import get_session
 from models.user import User
@@ -14,6 +14,7 @@ from sqlalchemy import select
 settings = get_settings()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
+oauth2_scheme_optional = HTTPBearer(auto_error=False)
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
@@ -80,4 +81,27 @@ async def get_current_user_by_refresh_token(
     user = result.scalars().first()
     if user is None:
         raise credentials_exception
-    return user 
+    return user
+
+async def get_current_user_optional(
+    token: Optional[str] = Depends(oauth2_scheme_optional),
+    session: AsyncSession = Depends(get_session)
+) -> Optional[User]:
+    """
+    Опциональная авторизация - возвращает пользователя если токен валидный, 
+    иначе None (для гостей)
+    """
+    if not token or not token.credentials:
+        return None
+    
+    try:
+        payload = jwt.decode(token.credentials, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        email: str = payload.get("sub")
+        if email is None:
+            return None
+            
+        result = await session.execute(select(User).where(User.email == email))
+        user = result.scalars().first()
+        return user
+    except JWTError:
+        return None

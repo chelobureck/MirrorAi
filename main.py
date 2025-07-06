@@ -12,7 +12,8 @@ from routers import (
     templates,
     preferences,
     public,
-    enhanced_generator
+    enhanced_generator,
+    main_generation
 )
 
 settings = get_settings()
@@ -40,6 +41,7 @@ app.include_router(templates.router, prefix=settings.API_V1_STR, tags=["template
 app.include_router(preferences.router, prefix=settings.API_V1_STR, tags=["preferences"])
 app.include_router(public.router, prefix=settings.API_V1_STR, tags=["public"])
 app.include_router(enhanced_generator.router, tags=["enhanced-generation"])
+app.include_router(main_generation.router, prefix=settings.API_V1_STR, tags=["main-generation"])
 
 
 @app.on_event("startup")
