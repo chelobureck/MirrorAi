@@ -37,7 +37,7 @@ app.include_router(auth.router, prefix=settings.API_V1_STR, tags=["auth"])
 app.include_router(html_generator.router, prefix=settings.API_V1_STR, tags=["html-generation"])
 app.include_router(presentations.router, prefix=settings.API_V1_STR, tags=["presentations"])
 app.include_router(boards.router, prefix=settings.API_V1_STR, tags=["boards"])
-app.include_router(templates.router, prefix=settings.API_V1_STR, tags=["templates"])
+app.include_router(templates.router, tags=["templates"])  # Убираем prefix, так как он уже в роутере
 app.include_router(preferences.router, prefix=settings.API_V1_STR, tags=["preferences"])
 app.include_router(public.router, prefix=settings.API_V1_STR, tags=["public"])
 app.include_router(enhanced_generator.router, tags=["enhanced-generation"])
@@ -69,7 +69,7 @@ async def api_health():
     """Проверка работоспособности API"""
     return {
         "status": "healthy",
-        "message": "SayDeck API v1 - AI Презентации с изображениями",
+        "message": "SayDeck API v1 - AI Презентации с системой шаблонов",
         "endpoints": {
             "generate_html": "/api/v1/generate/ (POST)",
             "generate_json": "/api/v1/generate/json (POST)",
@@ -77,6 +77,7 @@ async def api_health():
             "search_images": "/api/v1/enhanced/search-images (GET)",
             "presentations": "/api/v1/presentations",
             "public": "/api/v1/public",
+            "templates": "/api/v1/templates",
             "export": "/api/v1/export"
         },
         "features": [
@@ -86,11 +87,20 @@ async def api_health():
             "Автоматическое определение параметров",
             "Сохранение в базу данных",
             "Навигация по слайдам",
-            "Умный анализ контента для подбора изображений"
+            "Умный анализ контента для подбора изображений",
+            "Система публичных шаблонов презентаций"
         ],
+        "template_system": {
+            "save_template": "/api/v1/templates/{presentation_id}/save (POST)",
+            "delete_template": "/api/v1/templates/{template_id} (DELETE)",
+            "get_template": "/api/v1/templates/{template_id} (GET)",
+            "template_viewer": "/api/v1/templates/{template_id}/viewer (GET)",
+            "list_templates": "/api/v1/templates (GET)"
+        },
         "new_services": [
             "Enhanced Generator - расширенная генерация с изображениями",
             "Image Service - поиск изображений через Pexels API",
-            "Smart Content Analysis - анализ текста для подбора изображений"
+            "Smart Content Analysis - анализ текста для подбора изображений",
+            "Template Service - управление публичными шаблонами презентаций"
         ]
     }

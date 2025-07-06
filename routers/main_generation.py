@@ -19,7 +19,7 @@ from schemas.generation import (
 from services.guest_credits import guest_credits_service
 from services.presentation_files import presentation_files_service
 from services.image_microservice import image_microservice_client
-from ai_services.manager import AIServiceManager
+from ai_services.manager import ai_manager
 
 router = APIRouter(tags=["Main Generation"])
 
@@ -92,7 +92,7 @@ async def generate_presentation(
         presentation_id = str(uuid.uuid4())
         
         # 1. Генерируем HTML-презентацию (без фото)
-        ai_manager = AIServiceManager()
+        # Используем глобальный ai_manager
         
         # Формируем запрос к AI
         generation_request = {
