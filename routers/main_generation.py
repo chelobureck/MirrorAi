@@ -3,7 +3,7 @@ Main Generation Router - основной эндпоинт для генерац
 """
 import uuid
 from fastapi import APIRouter, Depends, HTTPException, Request, Header, Body
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, HTMLResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 import asyncio
@@ -171,25 +171,14 @@ async def generate_presentation(
             user_or_guest_id, presentation_id, final_html
         )
         
-        # 5. Формируем ответ
-        response = PresentationGenerateResponse(
-            presentation_id=presentation_id,
-            html=final_html
+        # 5. Возвращаем только HTML
+        return HTMLResponse(
+            content=final_html,
+            status_code=200,
+            headers={
+                "Content-Type": "text/html; charset=utf-8"
+            }
         )
-        
-        # Добавляем заголовок с session_id для гостей
-        response_json = response.model_dump()
-        headers = {}
-        
-        if guest_session_id:
-            headers["X-Guest-Session"] = guest_session_id
-            remaining_credits = await guest_credits_service.get_credits(guest_session_id, session)
-            headers["X-Guest-Credits"] = str(remaining_credits)
-        
-        if not current_user and x_guest_session:
-            response_json["guest_session_id"] = x_guest_session
-        
-        return JSONResponse(content=response_json, headers=headers)
         
     except Exception as e:
         # В случае ошибки - возвращаем кредит гостю
