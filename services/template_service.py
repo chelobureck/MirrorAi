@@ -161,6 +161,7 @@ class TemplateService:
         template = Template(
             public_id=str(uuid.uuid4()),
             title=presentation.content.get("title", "Unnamed Template"),
+            name=presentation.content.get("title", "Unnamed Template"),
             content=presentation.content,  # Копируем весь контент
             html_content=html_content,
             original_presentation_id=presentation.id,
@@ -289,6 +290,7 @@ class TemplateService:
                 template = Template(
                     public_id=tpl["id"],
                     title=tpl["title"],
+                    name=tpl["title"],
                     content={},
                     html_content=tpl["html_content"],
                     original_presentation_id=0,
