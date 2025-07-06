@@ -166,7 +166,8 @@ class TemplateService:
             html_content=html_content,
             original_presentation_id=presentation.id,
             user_id=user_id,
-            is_public=True
+            is_public=True,
+            preview_image_url=""
         )
         
         session.add(template)
@@ -293,9 +294,10 @@ class TemplateService:
                     name=tpl["title"],
                     content={},
                     html_content=tpl["html_content"],
-                    original_presentation_id=0,
+                    original_presentation_id=None,
                     user_id=user_id,
-                    is_public=True
+                    is_public=True,
+                    preview_image_url=""
                 )
                 session.add(template)
         await session.commit()
