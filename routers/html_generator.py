@@ -288,7 +288,7 @@ async def generate_html_presentation(
 
 Your task:
 
-🎯 Generate a modern, professional, multi-slide HTML presentation on the topic "{{text}}" (replace with the actual topic).
+🎯 Generate a modern, professional, multi-slide HTML presentation on the topic {text} (replace with the actual topic).
 
 Strict Instructions:
 
