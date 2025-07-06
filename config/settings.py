@@ -9,6 +9,12 @@ class Settings(BaseSettings):
     VERSION: str = "1.0.0"
     API_V1_STR: str = "/api/v1"
     
+    # Настройки CORS
+    BACKEND_CORS_ORIGINS: list = ["http://localhost:3000", "http://localhost:8000", "*"]
+    
+    # Переключатель базы данных (для Docker/локальной разработки)
+    USE_POSTGRES: str = "false"
+    
     # Настройки безопасности
     SECRET_KEY: str = "your_secret_key"
     ALGORITHM: str = "HS256"
@@ -38,13 +44,11 @@ class Settings(BaseSettings):
     OLLAMA_BASE_URL: str = "http://localhost:11434"
     OLLAMA_MODEL: str = "llama3.1:8b"
     
-    # Настройки CORS
-    BACKEND_CORS_ORIGINS: list[str] = ["*"]
+    # Настройки микросервиса изображений
+    IMAGE_MICROSERVICE_URL: str = "http://image-service:8080"
+    IMAGE_MICROSERVICE_TIMEOUT: int = 30
     
-    # Настройки загрузки файлов
-    MAX_UPLOAD_SIZE: int = 10 * 1024 * 1024  # 10MB
-    
-    # Google OAuth
+    # Настройки Google OAuth
     GOOGLE_CLIENT_ID: str = "your_google_client_id"
     GOOGLE_CLIENT_SECRET: str = "your_google_client_secret"
     GOOGLE_REDIRECT_URI: str = "http://localhost:8000/auth/google-callback"
@@ -55,7 +59,12 @@ class Settings(BaseSettings):
     
     @property
     def DATABASE_URL(self) -> str:
-        return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+        # Для локальной разработки используем SQLite
+        import os
+        if self.USE_POSTGRES.lower() == "true":
+            return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}?sslmode=disable"
+        else:
+            return "sqlite+aiosqlite:///./saydeck.db"
     
     class Config:
         env_file = ".env"
@@ -63,4 +72,4 @@ class Settings(BaseSettings):
 
 @lru_cache()
 def get_settings() -> Settings:
-    return Settings() 
+    return Settings()
