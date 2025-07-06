@@ -64,18 +64,14 @@ async def generate_html_presentation(
     try:
         # Создаем запрос для AI (Groq сам определит параметры)
         ai_request = AIGenerationRequest(
-            text=f"""You are an AI slide deck generator that outputs a complete HTML document for a web presentation. Your task:🎯 Generate a modern, professional, multi-slide HTML presentation on the topic {text} (replace with the actual topic).Strict Instructions:✅ Output only valid, well-formed, production-ready HTML. No explanations, no extra text outside the HTML document.✅ Each slide must be in its own <section> tag with a clear and consistent style.✅ Each slide must contain:A clear, professional <h1> title.An optional <h2> subtitle if helpful.A <p> with at least 40 words of informative, professional content.An <img> tag with a data-search-keywords attribute instead of a real src. The keywords must be in English, specific and descriptive, so they can be used to search relevant images on Pexels API. Do not use any static URLs or placeholder images.✅ The design must use a clean, light, professional color palette suitable for business or educational presentations (e.g. whites, light grays, light blues).✅ Include at least slides (e.g. 5–7), covering different aspects of the topic in depth.✅ Make sure the keywords in data-search-keywords are specific enough to return highly relevant images from Pexels.✅ Your final answer must be only the complete, production-ready HTML document. Do not include any explanations or instructions outside the HTML.Example slide (only for guidance):<section style="background-color:#F8FAFC;"><img data-search-keywords="modern business meeting technology"><h1>Modern Business Meetings</h1><h2>Technology and Collaboration</h2><p>Business meetings have evolved dramatically thanks to new communication technologies. Tools such as video conferencing and collaborative platforms have made remote work effective, enabling companies to reduce costs and increase flexibility.</p></section>You must generate a full HTML document with multiple slides following these instructions exactly.""",
-            language="ru",
+            text=text,
             slides_count=5,  # Заглушка, Groq сам определит
             animation=False
         )
-        
         # Генерируем презентацию через Groq
         presentation_data = await ai_manager.generate_presentation(ai_request)
-        
         # Создаем HTML страницу
-        #html_content = create_modern_html_presentation(presentation_data)
-        
+        html_content = create_modern_html_presentation(presentation_data)
         # Сохраняем в базу данных
         new_presentation = Presentation(
             title=presentation_data.get("title", "Сгенерированная презентация"),
@@ -85,9 +81,7 @@ async def generate_html_presentation(
         session.add(new_presentation)
         await session.commit()
         await session.refresh(new_presentation)
-        
         print(f"✅ Презентация создана: ID={new_presentation.id}, User={current_user.id}")
-        
         # Возвращаем HTML
         return HTMLResponse(
             content=html_content,
