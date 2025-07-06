@@ -62,8 +62,12 @@ async def startup():
     print("🚀 База данных и Redis успешно инициализированы!")
 
     from models.base import get_session
-    async with get_session() as session:
+    gen = get_session()
+    session = await anext(gen)
+    try:
         await TemplateService.create_builtin_templates_in_db(session, user_id=1)
+    finally:
+        await session.close()
 
 @app.get("/")
 async def root():
