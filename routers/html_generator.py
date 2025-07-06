@@ -254,11 +254,6 @@ def create_modern_html_presentation(presentation_data: Dict[str, Any]) -> str:
         <div class="slides-container">
             {slides_html}
         </div>
-        
-        <div class="navigation">
-            <button class="nav-btn" id="prev-btn" onclick="previousSlide()">← Предыдущий</button>
-            <button class="nav-btn" id="next-btn" onclick="nextSlide()">Следующий →</button>
-        </div>
     </div>
     
 </body>
