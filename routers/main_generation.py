@@ -2,10 +2,11 @@
 Main Generation Router - основной эндпоинт для генерации презентаций по ТЗ
 """
 import uuid
-from fastapi import APIRouter, Depends, HTTPException, Request, Header
+from fastapi import APIRouter, Depends, HTTPException, Request, Header, Body
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
+import asyncio
 
 from models.base import get_session
 from models.user import User
@@ -20,6 +21,8 @@ from services.guest_credits import guest_credits_service
 from services.presentation_files import presentation_files_service
 from services.image_microservice import image_microservice_client
 from ai_services.manager import ai_manager
+from services.template_service import TemplateService
+from ai_services.image_service import image_service, get_image_for_slide
 
 router = APIRouter(tags=["Main Generation"])
 
@@ -36,7 +39,8 @@ async def generate_presentation(
     req: Request,
     session: AsyncSession = Depends(get_session),
     current_user: Optional[User] = Depends(get_current_user_optional),
-    x_guest_session: Optional[str] = Header(None, alias="X-Guest-Session")
+    x_guest_session: Optional[str] = Header(None, alias="X-Guest-Session"),
+    template_id: Optional[str] = Body(None, description="ID шаблона для генерации")
 ):
     """
     🎯 Основной эндпоинт для генерации презентаций
@@ -106,12 +110,51 @@ async def generate_presentation(
         # Генерируем презентацию
         raw_presentation = await ai_manager.generate_presentation(generation_request)
         
-        # Извлекаем HTML из ответа
-        if isinstance(raw_presentation, dict) and "html" in raw_presentation:
-            raw_html = raw_presentation["html"]
+        # Извлекаем слайды и заголовок
+        slides = raw_presentation.get("slides") if isinstance(raw_presentation, dict) else None
+        title = raw_presentation.get("title") if isinstance(raw_presentation, dict) else request.topic
+        
+        # --- Новый блок: подбор изображений для слайдов ---
+        if slides:
+            image_tasks = []
+            for slide in slides:
+                search_query = f"{slide.get('title','')} {slide.get('content','')}"
+                image_tasks.append(get_image_for_slide(search_query))
+            images = await asyncio.gather(*image_tasks)
+            for i, slide in enumerate(slides):
+                image = images[i] if i < len(images) else None
+                if image:
+                    slide['image'] = image.to_dict() if hasattr(image, 'to_dict') else image
+        # --- Конец блока ---
+        
+        # Если выбран шаблон, подставляем контент в шаблон
+        if template_id:
+            # Сначала ищем встроенный шаблон
+            builtin = TemplateService.get_builtin_template(template_id)
+            template_html = None
+            if builtin:
+                template_html = builtin['html_content']
+            else:
+                template_html = await TemplateService.get_template_html(template_id, session)
+            if template_html:
+                slides_html = ""
+                if slides:
+                    for i, slide in enumerate(slides):
+                        # Вставка изображения, если есть
+                        img_html = ""
+                        if slide.get('image') and slide['image'].get('url'):
+                            img_html = f"<div class='slide-image'><img src='{slide['image']['url']}' alt='{slide['image'].get('alt','')}' /><div class='image-credit'>Фото: {slide['image'].get('photographer','')} | Pexels</div></div>"
+                        slides_html += f"<div class='slide'><h2>{slide.get('title','')}</h2><div class='content'>{slide.get('content','')}</div>{img_html}</div>"
+                else:
+                    slides_html = "<div class='slide'><h2>Нет слайдов</h2></div>"
+                raw_html = template_html.replace("{{slides}}", slides_html).replace("{{title}}", title)
+            else:
+                raw_html = await _create_fallback_html(request)
         else:
-            # Fallback: создаем простой HTML
-            raw_html = await _create_fallback_html(request)
+            if isinstance(raw_presentation, dict) and "html" in raw_presentation:
+                raw_html = raw_presentation["html"]
+            else:
+                raw_html = await _create_fallback_html(request)
         
         # 2. Сохраняем черновой HTML
         await presentation_files_service.save_raw_html(
@@ -142,6 +185,9 @@ async def generate_presentation(
             headers["X-Guest-Session"] = guest_session_id
             remaining_credits = await guest_credits_service.get_credits(guest_session_id, session)
             headers["X-Guest-Credits"] = str(remaining_credits)
+        
+        if not current_user and x_guest_session:
+            response_json["guest_session_id"] = x_guest_session
         
         return JSONResponse(content=response_json, headers=headers)
         

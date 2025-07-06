@@ -2,13 +2,13 @@
 Templates Router - публичные эндпоинты для работы с шаблонами презентаций
 """
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 from models.base import get_session
 from models.user import User
 from utils.auth import get_current_user
-from services.template_service import template_service
+from services.template_service import template_service, TemplateService
 from schemas.template import (
     TemplateResponse, 
     TemplateDetail, 
@@ -117,3 +117,16 @@ async def list_templates(
     """Список всех доступных шаблонов"""
     templates = await template_service.list_all_templates(session=session)
     return templates
+
+@router.get("/builtin", response_class=JSONResponse)
+async def list_builtin_templates():
+    """Список всех встроенных шаблонов (статичные)"""
+    return TemplateService.list_builtin_templates()
+
+@router.get("/builtin/{template_id}", response_class=JSONResponse)
+async def get_builtin_template(template_id: str):
+    """Получить встроенный шаблон по ID (статичный)"""
+    template = TemplateService.get_builtin_template(template_id)
+    if not template:
+        return JSONResponse(status_code=404, content={"detail": "Template not found"})
+    return template

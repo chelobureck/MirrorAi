@@ -11,6 +11,125 @@ from models.user import User
 from schemas.template import TemplateResponse, TemplateDetail, TemplateCreateResponse, TemplateDeleteResponse
 
 
+# --- Встроенные шаблоны ---
+BUILTIN_TEMPLATES = {
+    "minimalism": {
+        "id": "minimalism",
+        "title": "Минимализм",
+        "html_content": """
+        <!DOCTYPE html>
+        <html lang=\"ru\">
+        <head>
+            <meta charset=\"UTF-8\">
+            <title>{{title}}</title>
+            <style>
+                body { background: #fff; color: #222; font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 40px; }
+                .slide { margin: 40px auto; max-width: 700px; background: #f9f9f9; border-radius: 12px; box-shadow: 0 2px 8px #eee; padding: 40px; }
+                h2 { border-bottom: 1px solid #eee; margin-bottom: 20px; }
+                .content { font-size: 1.2em; }
+            </style>
+        </head>
+        <body>
+            <h1 style=\"text-align:center;\">{{title}}</h1>
+            {{slides}}
+        </body>
+        </html>
+        """
+    },
+    "nature": {
+        "id": "nature",
+        "title": "Природа",
+        "html_content": """
+        <!DOCTYPE html>
+        <html lang=\"ru\">
+        <head>
+            <meta charset=\"UTF-8\">
+            <title>{{title}}</title>
+            <style>
+                body { background: linear-gradient(120deg, #a8e063 0%, #56ab2f 100%); color: #234; font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 40px; }
+                .slide { margin: 40px auto; max-width: 700px; background: rgba(255,255,255,0.85); border-radius: 16px; box-shadow: 0 4px 16px #b2f7ef; padding: 40px; }
+                h2 { color: #388e3c; border-bottom: 1px solid #b2f7ef; margin-bottom: 20px; }
+                .content { font-size: 1.2em; }
+            </style>
+        </head>
+        <body>
+            <h1 style=\"text-align:center; color:#388e3c;\">{{title}}</h1>
+            {{slides}}
+        </body>
+        </html>
+        """
+    },
+    "transport": {
+        "id": "transport",
+        "title": "Транспорт",
+        "html_content": """
+        <!DOCTYPE html>
+        <html lang=\"ru\">
+        <head>
+            <meta charset=\"UTF-8\">
+            <title>{{title}}</title>
+            <style>
+                body { background: #e0eafc; background: linear-gradient(120deg, #e0eafc 0%, #cfdef3 100%); color: #222; font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 40px; }
+                .slide { margin: 40px auto; max-width: 700px; background: #fff; border-radius: 16px; box-shadow: 0 4px 16px #b2b2b2; padding: 40px; border-left: 8px solid #1976d2; }
+                h2 { color: #1976d2; border-bottom: 1px solid #b2b2b2; margin-bottom: 20px; }
+                .content { font-size: 1.2em; }
+            </style>
+        </head>
+        <body>
+            <h1 style=\"text-align:center; color:#1976d2;\">{{title}}</h1>
+            {{slides}}
+        </body>
+        </html>
+        """
+    },
+    "it": {
+        "id": "it",
+        "title": "IT Технологии",
+        "html_content": """
+        <!DOCTYPE html>
+        <html lang=\"ru\">
+        <head>
+            <meta charset=\"UTF-8\">
+            <title>{{title}}</title>
+            <style>
+                body { background: #232526; background: linear-gradient(120deg, #232526 0%, #414345 100%); color: #fff; font-family: 'Fira Mono', 'Consolas', monospace; margin: 0; padding: 40px; }
+                .slide { margin: 40px auto; max-width: 700px; background: #2c3e50; border-radius: 16px; box-shadow: 0 4px 16px #111; padding: 40px; border-left: 8px solid #00c3ff; }
+                h2 { color: #00c3ff; border-bottom: 1px solid #00c3ff; margin-bottom: 20px; }
+                .content { font-size: 1.2em; }
+            </style>
+        </head>
+        <body>
+            <h1 style=\"text-align:center; color:#00c3ff;\">{{title}}</h1>
+            {{slides}}
+        </body>
+        </html>
+        """
+    },
+    "abstract": {
+        "id": "abstract",
+        "title": "Абстракция",
+        "html_content": """
+        <!DOCTYPE html>
+        <html lang=\"ru\">
+        <head>
+            <meta charset=\"UTF-8\">
+            <title>{{title}}</title>
+            <style>
+                body { background: linear-gradient(135deg, #f7971e 0%, #ffd200 100%); color: #333; font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 40px; }
+                .slide { margin: 40px auto; max-width: 700px; background: rgba(255,255,255,0.95); border-radius: 20px; box-shadow: 0 4px 24px #f7971e44; padding: 40px; border-left: 8px solid #ffd200; }
+                h2 { color: #f7971e; border-bottom: 1px solid #ffd200; margin-bottom: 20px; }
+                .content { font-size: 1.2em; }
+            </style>
+        </head>
+        <body>
+            <h1 style=\"text-align:center; color:#f7971e;\">{{title}}</h1>
+            {{slides}}
+        </body>
+        </html>
+        """
+    },
+}
+
 class TemplateService:
     """Сервис для управления шаблонами презентаций"""
     
@@ -145,6 +264,16 @@ class TemplateService:
             )
             for template in templates
         ]
+
+    @staticmethod
+    def get_builtin_template(template_id: str) -> Optional[dict]:
+        """Получить встроенный шаблон по ID"""
+        return BUILTIN_TEMPLATES.get(template_id)
+
+    @staticmethod
+    def list_builtin_templates() -> List[dict]:
+        """Список всех встроенных шаблонов"""
+        return list(BUILTIN_TEMPLATES.values())
 
 
 # Глобальный экземпляр сервиса
