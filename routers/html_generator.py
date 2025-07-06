@@ -284,7 +284,7 @@ async def generate_html_presentation(
     try:
         # Создаем запрос для AI (Groq сам определит параметры)
         ai_request = AIGenerationRequest(
-            text="""You are an AI slide deck generator that outputs a complete HTML document for a web presentation.
+            text=f"""You are an AI slide deck generator that outputs a complete HTML document for a web presentation.
 
 Your task:
 
