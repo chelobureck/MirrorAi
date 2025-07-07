@@ -74,27 +74,19 @@ async def generate_enhanced_presentation(
         
         # 1. Генерируем базовую презентацию через AI manager
         ai_request = AIGenerationRequest(
-            text=f"""Создай структурированную презентацию на тему: {request.topic}
-            
-Аудитория: {request.audience}
-Стиль: {request.style}
-Количество слайдов: {request.slides_count}
-Язык: {request.language}
-
-Верни ответ в JSON формате:
-{{
-    \"title\": \"Название презентации\",
-    \"slides\": [
-        {{
-            \"title\": \"Заголовок слайда\",
-            \"content\": \"Содержимое слайда\"
-        }}
-    ]
-}}""",
+            text=f"Создай презентацию на тему: {request.topic}",
+            topic=request.topic,
+            slides_count=request.slides_count,
             language=request.language
         )
         
-        base_response = await ai_manager.generate_presentation(ai_request)
+        try:
+            base_response = await ai_manager.generate_presentation(ai_request)
+            logger.info(f"✓ AI генерация завершена: {type(base_response)}")
+        except Exception as ai_error:
+            logger.error(f"❌ Ошибка AI генерации: {str(ai_error)}")
+            # Fallback на демо презентацию
+            base_response = _create_demo_presentation(request)
         
         # base_response теперь dict, а не объект с content
         base_content = base_response
@@ -413,3 +405,30 @@ async def health_check() -> Dict[str, Any]:
             "status": "error",
             "error": str(e)
         }
+
+def _create_demo_presentation(request: EnhancedPresentationRequest) -> Dict[str, Any]:
+    """Создает демо презентацию при ошибках AI"""
+    
+    demo_slides = []
+    
+    for i in range(request.slides_count):
+        if i == 0:
+            demo_slides.append({
+                "title": f"Введение в тему: {request.topic}",
+                "content": f"Добро пожаловать на презентацию о теме '{request.topic}'. Эта презентация создана специально для аудитории: {request.audience}."
+            })
+        elif i == request.slides_count - 1:
+            demo_slides.append({
+                "title": "Заключение",
+                "content": f"Спасибо за внимание! Мы рассмотрели основные аспекты темы '{request.topic}'. Надеемся, что презентация была полезной."
+            })
+        else:
+            demo_slides.append({
+                "title": f"Пункт {i}: Ключевые аспекты",
+                "content": f"Здесь представлен важный материал по теме '{request.topic}'. Этот раздел содержит детальную информацию, адаптированную для {request.audience}."
+            })
+    
+    return {
+        "title": f"Презентация: {request.topic}",
+        "slides": demo_slides
+    }

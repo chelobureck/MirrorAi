@@ -10,7 +10,13 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     
     # Настройки CORS
-    BACKEND_CORS_ORIGINS: list = ["http://localhost:3000", "http://localhost:8000", "*"]
+    BACKEND_CORS_ORIGINS: list = [
+        "http://localhost:3000", 
+        "http://localhost:5173",  # Vite dev server
+        "http://localhost:8000", 
+        "https://saydeck.onrender.com",
+        "*"  # Разрешаем все источники для разработки
+    ]
     
     # Переключатель базы данных (для Docker/локальной разработки)
     USE_POSTGRES: str = "false"
