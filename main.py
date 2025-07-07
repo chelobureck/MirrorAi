@@ -16,6 +16,7 @@ from routers import (
     main_generation
 )
 from services.template_service import TemplateService
+from ai_services.image_service import image_service
 
 settings = get_settings()
 app = FastAPI(
@@ -69,6 +70,12 @@ async def startup():
         await TemplateService.create_builtin_templates_in_db(session, user_id=1)
     finally:
         await session.close()
+
+    await image_service._ensure_session()
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    await image_service.close_session()
 
 @app.get("/")
 async def root():

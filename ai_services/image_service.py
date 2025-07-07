@@ -61,16 +61,6 @@ class PexelsImageService:
         if not self.api_key or self.api_key == "your_pexels_api_key":
             logger.warning("⚠️  Pexels API key не настроен. Изображения будут заменены плейсхолдерами")
     
-    async def __aenter__(self):
-        """Async context manager entry"""
-        await self._ensure_session()
-        return self
-    
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        """Async context manager exit"""
-        if self.session:
-            await self.session.close()
-    
     async def _ensure_session(self):
         """Создание HTTP сессии если она не существует"""
         if not self.session or self.session.closed:
@@ -278,6 +268,10 @@ class PexelsImageService:
         
         # Берем первые 2-3 ключевых слова
         return ' '.join(keywords[:3]) if keywords else text[:50]
+
+    async def close_session(self):
+        if self.session and not self.session.closed:
+            await self.session.close()
 
 # Глобальный экземпляр сервиса
 image_service = PexelsImageService()

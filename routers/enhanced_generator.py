@@ -238,9 +238,8 @@ async def _find_image_for_slide(slide_data: Dict[str, str], style: str) -> Optio
             search_query += " minimal clean simple"
         
         # Ищем изображение
-        async with image_service as service:
-            image_result = await service.search_for_slide_content(search_query)
-            return image_result.to_dict() if image_result else None
+        image_result = await image_service.search_for_slide_content(search_query)
+        return image_result.to_dict() if image_result else None
             
     except Exception as e:
         logger.error(f"💥 Ошибка поиска изображения: {str(e)}")
@@ -340,8 +339,7 @@ async def search_images_endpoint(
         elif style == "minimal":
             enhanced_query += " minimal clean"
         
-        async with image_service as service:
-            results = await service.search_images(enhanced_query, per_page=count)
+        results = await image_service.search_images(enhanced_query, per_page=count)
             
         return {
             "query": query,
@@ -360,13 +358,9 @@ async def analyze_slide_for_image(slide_content: str) -> Dict[str, Any]:
     🧠 Анализ слайда для подбора изображения
     """
     try:
-        async with image_service as service:
-            # Извлекаем ключевые слова
-            keywords = await service._extract_keywords(slide_content)
-            
-            # Ищем изображение
-            image = await service.search_for_slide_content(slide_content)
-            
+        keywords = await image_service._extract_keywords(slide_content)
+        image = await image_service.search_for_slide_content(slide_content)
+        
         return {
             "original_content": slide_content,
             "extracted_keywords": keywords,
