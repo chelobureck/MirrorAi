@@ -94,7 +94,7 @@ async def generate_enhanced_presentation(
             language=request.language
         )
         
-        base_response = await ai_manager.generate_content(ai_request)
+        base_response = await ai_manager.generate_presentation(ai_request)
         
         # Парсим JSON ответ
         try:
