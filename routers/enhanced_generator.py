@@ -74,7 +74,7 @@ async def generate_enhanced_presentation(
         
         # 1. Генерируем базовую презентацию через AI manager
         ai_request = AIGenerationRequest(
-            prompt=f"""Создай структурированную презентацию на тему: {request.topic}
+            text=f"""Создай структурированную презентацию на тему: {request.topic}
             
 Аудитория: {request.audience}
 Стиль: {request.style}
@@ -83,16 +83,15 @@ async def generate_enhanced_presentation(
 
 Верни ответ в JSON формате:
 {{
-    "title": "Название презентации",
-    "slides": [
+    \"title\": \"Название презентации\",
+    \"slides\": [
         {{
-            "title": "Заголовок слайда",
-            "content": "Содержимое слайда"
+            \"title\": \"Заголовок слайда\",
+            \"content\": \"Содержимое слайда\"
         }}
     ]
 }}""",
-            language=request.language,
-            provider=AIProviderType.GROQ
+            language=request.language
         )
         
         base_response = await ai_manager.generate_content(ai_request)
