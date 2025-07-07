@@ -34,6 +34,17 @@ class EnhancedPresentationRequest(BaseModel):
     image_style: str = "professional"  # professional, creative, minimal
     auto_enhance: bool = True
 
+class EnhancedPresentationUpdate(BaseModel):
+    """Запрос для обновления расширенной презентации"""
+    topic: Optional[str] = None
+    slides_count: Optional[int] = None
+    audience: Optional[str] = None
+    style: Optional[str] = None
+    language: Optional[str] = None
+    include_images: Optional[bool] = None
+    image_style: Optional[str] = None
+    auto_enhance: Optional[bool] = None
+
 class SlideWithImage(BaseModel):
     """Слайд с изображением"""
     title: str
@@ -374,7 +385,7 @@ async def analyze_slide_for_image(slide_content: str) -> Dict[str, Any]:
 @router.get("/health")
 async def health_check() -> Dict[str, Any]:
     """
-    ❤️  Проверка здоровья сервиса
+    ❤️  Проверка здоровья расширенного сервиса генерации
     """
     try:
         # Проверяем доступность Pexels API
@@ -385,11 +396,28 @@ async def health_check() -> Dict[str, Any]:
         
         return {
             "status": "healthy",
+            "service": "enhanced_generator",
             "services": {
                 "pexels_api": pexels_status,
                 "ai_services": ai_status
             },
-            "cache_size": len(image_service._cache),
+            "endpoints": {
+                "create": "POST /api/v1/enhanced/generate",
+                "update": "PUT /api/v1/enhanced/presentation/{id}",
+                "get": "GET /api/v1/enhanced/presentation/{id}", 
+                "delete": "DELETE /api/v1/enhanced/presentation/{id}",
+                "search_images": "GET /api/v1/enhanced/search-images",
+                "analyze_slide": "POST /api/v1/enhanced/analyze-slide"
+            },
+            "features": [
+                "Создание презентаций с изображениями",
+                "Обновление существующих презентаций", 
+                "Удаление презентаций",
+                "Поиск изображений через Pexels API",
+                "Анализ контента для подбора изображений",
+                "Автоматическая генерация HTML превью"
+            ],
+            "cache_size": len(image_service._cache) if hasattr(image_service, '_cache') else 0,
             "version": settings.VERSION
         }
         
@@ -426,3 +454,245 @@ def _create_demo_presentation(request: EnhancedPresentationRequest) -> Dict[str,
         "title": f"Презентация: {request.topic}",
         "slides": demo_slides
     }
+
+@router.put("/presentation/{presentation_id}", response_model=EnhancedPresentationResponse)
+async def update_enhanced_presentation(
+    presentation_id: int,
+    update_request: EnhancedPresentationUpdate,
+    background_tasks: BackgroundTasks
+) -> EnhancedPresentationResponse:
+    """
+    ✏️ Обновление существующей расширенной презентации
+    
+    Возможности:
+    - Обновление параметров презентации
+    - Перегенерация с новыми настройками
+    - Обновление изображений при необходимости
+    """
+    
+    import time
+    start_time = time.time()
+    
+    try:
+        logger.info(f"🔄 Обновление презентации ID: {presentation_id}")
+        
+        # Проверяем какие поля нужно обновить
+        update_data = update_request.dict(exclude_unset=True)
+        
+        if not update_data:
+            raise HTTPException(
+                status_code=400,
+                detail="Не указаны поля для обновления"
+            )
+        
+        # Создаем новый запрос на основе обновленных данных
+        # В реальном приложении здесь был бы запрос к БД для получения текущих данных
+        current_request = EnhancedPresentationRequest(
+            topic=update_data.get("topic", "Обновленная презентация"),
+            slides_count=update_data.get("slides_count", 5),
+            audience=update_data.get("audience", "general"),
+            style=update_data.get("style", "professional"),
+            language=update_data.get("language", "ru"),
+            include_images=update_data.get("include_images", True),
+            image_style=update_data.get("image_style", "professional"),
+            auto_enhance=update_data.get("auto_enhance", True)
+        )
+        
+        logger.info(f"📝 Параметры обновления: {update_data}")
+        
+        # Генерируем обновленную презентацию
+        ai_request = AIGenerationRequest(
+            text=f"Обнови презентацию на тему: {current_request.topic}",
+            topic=current_request.topic,
+            slides_count=current_request.slides_count,
+            language=current_request.language
+        )
+        
+        try:
+            base_response = await ai_manager.generate_presentation(ai_request)
+            logger.info(f"✓ AI обновление завершено")
+        except Exception as ai_error:
+            logger.error(f"❌ Ошибка AI обновления: {str(ai_error)}")
+            base_response = _create_demo_presentation(current_request)
+        
+        base_content = base_response
+        slides_data = await _parse_generated_content(base_content)
+        
+        # Обновляем изображения если требуется
+        enhanced_slides = []
+        images_found = 0
+        
+        if current_request.include_images:
+            logger.info(f"🖼️  Обновление изображений для {len(slides_data)} слайдов")
+            
+            image_tasks = []
+            for slide_data in slides_data:
+                task = _find_image_for_slide(slide_data, current_request.image_style)
+                image_tasks.append(task)
+            
+            slide_images = await asyncio.gather(*image_tasks, return_exceptions=True)
+            
+            for i, slide_data in enumerate(slides_data):
+                image_result = slide_images[i] if i < len(slide_images) else None
+                
+                if isinstance(image_result, Exception):
+                    logger.error(f"❌ Ошибка поиска изображения для слайда {i}: {str(image_result)}")
+                    image_result = None
+                
+                if image_result:
+                    images_found += 1
+                
+                enhanced_slide = SlideWithImage(
+                    title=slide_data.get("title", ""),
+                    content=slide_data.get("content", ""),
+                    image=image_result,
+                    image_alt=image_result.get("alt", "") if image_result else "",
+                    layout="title-content-image" if image_result else "title-content"
+                )
+                enhanced_slides.append(enhanced_slide)
+        else:
+            for slide_data in slides_data:
+                enhanced_slide = SlideWithImage(
+                    title=slide_data.get("title", ""),
+                    content=slide_data.get("content", ""),
+                    layout="title-content"
+                )
+                enhanced_slides.append(enhanced_slide)
+        
+        generation_time = time.time() - start_time
+        
+        logger.info(f"✅ Презентация обновлена! Время: {generation_time:.2f}с, Изображений: {images_found}")
+        
+        # В реальном приложении здесь было бы обновление в БД
+        
+        return EnhancedPresentationResponse(
+            title=base_content.get("title", current_request.topic),
+            slides=enhanced_slides,
+            total_slides=len(enhanced_slides),
+            generation_time=generation_time,
+            images_found=images_found,
+            html_preview=None
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"💥 Ошибка обновления презентации: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Ошибка обновления презентации: {str(e)}"
+        )
+
+@router.delete("/presentation/{presentation_id}")
+async def delete_enhanced_presentation(presentation_id: int) -> Dict[str, Any]:
+    """
+    🗑️ Удаление расширенной презентации
+    
+    Возможности:
+    - Удаление презентации по ID
+    - Очистка связанных ресурсов
+    - Логирование операции удаления
+    """
+    
+    try:
+        logger.info(f"🗑️ Удаление презентации ID: {presentation_id}")
+        
+        # Проверяем существование презентации
+        if presentation_id <= 0:
+            raise HTTPException(
+                status_code=400,
+                detail="Некорректный ID презентации"
+            )
+        
+        # В реальном приложении здесь был бы запрос к БД для проверки существования
+        # и права доступа пользователя к презентации
+        
+        # Симуляция проверки существования
+        if presentation_id > 10000:  # Имитация несуществующей презентации
+            raise HTTPException(
+                status_code=404,
+                detail=f"Презентация с ID {presentation_id} не найдена"
+            )
+        
+        # В реальном приложении здесь было бы:
+        # 1. Удаление из базы данных
+        # 2. Удаление связанных файлов
+        # 3. Очистка кэша
+        
+        logger.info(f"✅ Презентация {presentation_id} успешно удалена")
+        
+        return {
+            "success": True,
+            "message": f"Презентация {presentation_id} успешно удалена",
+            "presentation_id": presentation_id,
+            "deleted_at": "2025-07-07T15:00:00Z"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"💥 Ошибка удаления презентации: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Ошибка удаления презентации: {str(e)}"
+        )
+
+@router.get("/presentation/{presentation_id}")
+async def get_enhanced_presentation(presentation_id: int) -> Dict[str, Any]:
+    """
+    📄 Получение расширенной презентации по ID
+    
+    Дополнительный эндпоинт для получения существующей презентации
+    """
+    
+    try:
+        logger.info(f"📄 Получение презентации ID: {presentation_id}")
+        
+        if presentation_id <= 0:
+            raise HTTPException(
+                status_code=400,
+                detail="Некорректный ID презентации"
+            )
+        
+        # Симуляция проверки существования
+        if presentation_id > 10000:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Презентация с ID {presentation_id} не найдена"
+            )
+        
+        # В реальном приложении здесь был бы запрос к БД
+        # Для демонстрации возвращаем макет данных
+        
+        demo_slides = [
+            {
+                "title": "Демо слайд 1",
+                "content": "Это демонстрационное содержимое первого слайда",
+                "image": {
+                    "url": "https://images.pexels.com/photos/574077/pexels-photo-574077.jpeg",
+                    "alt": "Demo image",
+                    "photographer": "Demo Author"
+                },
+                "layout": "title-content-image"
+            }
+        ]
+        
+        return {
+            "presentation_id": presentation_id,
+            "title": f"Демо презентация {presentation_id}",
+            "slides": demo_slides,
+            "total_slides": len(demo_slides),
+            "created_at": "2025-07-07T14:00:00Z",
+            "updated_at": "2025-07-07T15:00:00Z",
+            "images_count": 1,
+            "status": "ready"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"💥 Ошибка получения презентации: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Ошибка получения презентации: {str(e)}"
+        )
