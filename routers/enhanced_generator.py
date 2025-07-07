@@ -74,44 +74,18 @@ async def generate_enhanced_presentation(
         
         # 1. Генерируем базовую презентацию через AI manager
         ai_request = AIGenerationRequest(
-            prompt=f"""Создай структурированную презентацию на тему: {request.topic}
-            
-Аудитория: {request.audience}
-Стиль: {request.style}
-Количество слайдов: {request.slides_count}
-Язык: {request.language}
-
-Верни ответ в JSON формате:
-{{
-    "title": "Название презентации",
-    "slides": [
-        {{
-            "title": "Заголовок слайда",
-            "content": "Содержимое слайда"
-        }}
-    ]
-}}""",
+            text=f"Презентация на тему: {request.topic}",
+            topic=request.topic,
+            content=f"""Аудитория: {request.audience}
+Стиль: {request.style}""",
             language=request.language,
-            provider=AIProviderType.GROQ
+            slides_count=request.slides_count
         )
         
-        base_response = await ai_manager.generate_content(ai_request)
+        base_response = await ai_manager.generate_presentation(ai_request)
         
-        # Парсим JSON ответ
-        try:
-            import json
-            base_content = json.loads(base_response.content)
-        except json.JSONDecodeError:
-            # Fallback - создаем простую структуру
-            base_content = {
-                "title": request.topic,
-                "slides": [
-                    {
-                        "title": f"Слайд о {request.topic}",
-                        "content": base_response.content[:500]
-                    }
-                ]
-            }
+        # base_response уже содержит готовый dictionary
+        base_content = base_response
         
         # 2. Парсим сгенерированный контент
         slides_data = await _parse_generated_content(base_content)

@@ -8,6 +8,8 @@ from pydantic import BaseModel
 class AIGenerationRequest(BaseModel):
     """Запрос для генерации презентации"""
     text: str
+    topic: Optional[str] = None
+    content: Optional[str] = None  
     language: str = "ru"
     slides_count: int = 5
     animation: bool = False
