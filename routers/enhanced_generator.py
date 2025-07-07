@@ -96,21 +96,8 @@ async def generate_enhanced_presentation(
         
         base_response = await ai_manager.generate_presentation(ai_request)
         
-        # Парсим JSON ответ
-        try:
-            import json
-            base_content = json.loads(base_response.content)
-        except json.JSONDecodeError:
-            # Fallback - создаем простую структуру
-            base_content = {
-                "title": request.topic,
-                "slides": [
-                    {
-                        "title": f"Слайд о {request.topic}",
-                        "content": base_response.content[:500]
-                    }
-                ]
-            }
+        # base_response теперь dict, а не объект с content
+        base_content = base_response
         
         # 2. Парсим сгенерированный контент
         slides_data = await _parse_generated_content(base_content)
