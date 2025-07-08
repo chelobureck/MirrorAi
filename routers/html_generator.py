@@ -33,12 +33,61 @@ def create_modern_html_presentation(presentation_data: Dict[str, Any]) -> str:
             slide_class += " active"
             
         slides_html += f"""
-        <div class="{slide_class}" data-slide="{i}">
-            <div class="slide-content">
-                {slide_title}
-                {slide_content}
+        <style>
+        .slide-content {
+          display: flex;
+          flex-direction: row;
+          justify-content: space-between;
+          gap: 20px;
+          align-items: flex-start;
+          flex-wrap: wrap;
+        }
+        
+        .text-column {
+          flex: 1 1 55%;
+          max-width: 55%;
+        }
+        
+        .image-column {
+          flex: 1 1 40%;
+          max-width: 40%;
+          text-align: right;
+        }
+        
+        .image-column img {
+          max-width: 100%;
+          height: auto;
+          border-radius: 10px;
+        }
+        
+        @media (max-width: 768px) {
+          .slide-content {
+            flex-direction: column;
+          }
+          .text-column, .image-column {
+            max-width: 100%;
+            flex: 1 1 100%;
+          }
+        }
+
+        </style>
+
+        <div class="slide">
+          <div class="slide-content">
+            <div class="text-column">
+              <h2>{{ slide.title }}</h2>
+              <div class="content">
+                {{ slide.content | safe }}
+              </div>
             </div>
+            {% if slide.image %}
+            <div class="image-column">
+              <img src="{{ slide.image }}" alt="Slide image" />
+            </div>
+            {% endif %}
+          </div>
         </div>
+
         """
 
     # Создаем полную HTML страницу с современными стилями
