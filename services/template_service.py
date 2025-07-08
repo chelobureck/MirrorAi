@@ -142,26 +142,50 @@ class TemplateService:
         """Создает шаблон из существующей презентации"""
         
         # Получаем оригинальную презентацию
+        # Ищем среди презентаций пользователя ИЛИ публичных презентаций
         result = await session.execute(
             select(Presentation).where(
                 Presentation.id == presentation_id,
-                Presentation.user_id == user_id  # Только владелец может создавать шаблоны
+                (Presentation.user_id == user_id) | (Presentation.is_public == True)
             )
         )
         presentation = result.scalar_one_or_none()
         
         if not presentation:
-            raise ValueError("Presentation not found or access denied")
+            raise ValueError(f"Presentation {presentation_id} not found or access denied")
         
-        # Генерируем HTML из контента (импортируем функцию из html_generator)
-        from routers.html_generator import create_modern_html_presentation
-        html_content = create_modern_html_presentation(presentation.content)
+        # Извлекаем title и HTML из презентации
+        if isinstance(presentation.content, dict):
+            title = presentation.content.get("title", f"Template from Presentation {presentation_id}")
+            # Если есть готовый HTML в content
+            html_content = presentation.content.get("html", "")
+            
+            # Если HTML нет, пытаемся сгенерировать из структуры
+            if not html_content:
+                try:
+                    # Простая генерация HTML из slides
+                    slides = presentation.content.get("slides", [])
+                    if slides:
+                        html_parts = ["<!DOCTYPE html><html><head><title>{}</title></head><body>".format(title)]
+                        for i, slide in enumerate(slides, 1):
+                            slide_title = slide.get("title", f"Slide {i}")
+                            slide_content = slide.get("content", "")
+                            html_parts.append(f"<div class='slide'><h2>{slide_title}</h2><div>{slide_content}</div></div>")
+                        html_parts.append("</body></html>")
+                        html_content = "\n".join(html_parts)
+                    else:
+                        html_content = f"<html><head><title>{title}</title></head><body><h1>{title}</h1><p>No content available</p></body></html>"
+                except Exception as e:
+                    html_content = f"<html><head><title>{title}</title></head><body><h1>{title}</h1><p>Content generation error: {str(e)}</p></body></html>"
+        else:
+            title = f"Template from Presentation {presentation_id}"
+            html_content = f"<html><head><title>{title}</title></head><body><h1>{title}</h1><p>Invalid content format</p></body></html>"
         
         # Создаем шаблон
         template = Template(
             public_id=str(uuid.uuid4()),
-            title=presentation.content.get("title", "Unnamed Template"),
-            name=presentation.content.get("title", "Unnamed Template"),
+            title=title,
+            name=title,
             content=presentation.content,  # Копируем весь контент
             html_content=html_content,
             original_presentation_id=presentation.id,
@@ -174,7 +198,10 @@ class TemplateService:
         await session.commit()
         await session.refresh(template)
         
-        return TemplateCreateResponse(templateId=template.public_id)
+        return TemplateCreateResponse(
+            templateId=template.public_id,
+            message=f"Template '{title}' created successfully from presentation {presentation_id}"
+        )
     
     @staticmethod
     async def get_template_by_public_id(
@@ -301,6 +328,58 @@ class TemplateService:
                 )
                 session.add(template)
         await session.commit()
+
+    @staticmethod
+    async def create_template_from_data(
+        title: str,
+        html_content: str,
+        user_id: int,
+        session: AsyncSession,
+        description: Optional[str] = None,
+        presentation_id: Optional[int] = None
+    ) -> TemplateCreateResponse:
+        """
+        Создает шаблон из переданных данных напрямую
+        
+        Args:
+            title: Заголовок шаблона
+            html_content: HTML контент презентации
+            user_id: ID пользователя-создателя
+            session: Сессия БД
+            description: Опциональное описание
+            presentation_id: Опциональный ID презентации в БД
+        """
+        
+        # Создаем минимальный объект content для совместимости
+        content = {
+            "title": title,
+            "description": description or "",
+            "html": html_content,
+            "slides_count": 1,  # Базовое значение
+            "language": "en"
+        }
+        
+        # Создаем шаблон
+        template = Template(
+            public_id=str(uuid.uuid4()),
+            title=title,
+            name=title,
+            content=content,
+            html_content=html_content,  # Используем переданный HTML
+            original_presentation_id=presentation_id,  # Может быть None
+            user_id=user_id,
+            is_public=True,
+            preview_image_url=""
+        )
+        
+        session.add(template)
+        await session.commit()
+        await session.refresh(template)
+        
+        return TemplateCreateResponse(
+            templateId=template.public_id,
+            message=f"Template '{title}' created successfully"
+        )
 
 
 # Глобальный экземпляр сервиса
