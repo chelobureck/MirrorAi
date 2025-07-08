@@ -5,6 +5,13 @@ from datetime import datetime
 class TemplateCreate(BaseModel):
     presentation_id: int
 
+class TemplateSaveRequest(BaseModel):
+    """Запрос для сохранения презентации как шаблона с данными"""
+    presentation_id: Optional[int] = None  # Опционально, если есть ID в БД
+    title: Optional[str] = None  # Опционально - если None, извлекается из презентации
+    html: Optional[str] = None   # Опционально - если None, извлекается из презентации
+    description: Optional[str] = None  # Опциональное описание
+
 class TemplateResponse(BaseModel):
     templateId: str  # public_id
     title: str

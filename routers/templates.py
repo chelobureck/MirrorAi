@@ -1,19 +1,20 @@
 """
 Templates Router - публичные эндпоинты для работы с шаблонами презентаций
 """
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Body
 from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List
+from typing import List, Optional, Optional
 from models.base import get_session
 from models.user import User
 from utils.auth import get_current_user
-from services.template_service import template_service, TemplateService
+from services.template_service import TemplateService
 from schemas.template import (
     TemplateResponse, 
     TemplateDetail, 
     TemplateCreateResponse, 
-    TemplateDeleteResponse
+    TemplateDeleteResponse,
+    TemplateSaveRequest
 )
 
 router = APIRouter(prefix="/api/v1/templates", tags=["templates"])
@@ -21,20 +22,40 @@ router = APIRouter(prefix="/api/v1/templates", tags=["templates"])
 @router.post("/{presentation_id}/save", response_model=TemplateCreateResponse)
 async def save_presentation_as_template(
     presentation_id: int,
+    save_request: Optional[TemplateSaveRequest] = Body(None),
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
-    """Сохраняет существующую презентацию (по ID) как шаблон"""
+    """
+    Сохраняет презентацию как шаблон
+    
+    Два режима работы:
+    1. Если передан save_request с title и html - использует эти данные
+    2. Если save_request пустой - ищет презентацию по presentation_id и извлекает данные
+    """
     try:
-        result = await template_service.create_template_from_presentation(
-            presentation_id=presentation_id,
-            user_id=current_user.id,
-            session=session
-        )
+        # Режим 1: Данные переданы напрямую в запросе
+        if save_request and save_request.title and save_request.html:
+            result = await TemplateService.create_template_from_data(
+                title=save_request.title,
+                html_content=save_request.html,
+                description=save_request.description,
+                user_id=current_user.id,
+                presentation_id=presentation_id,
+                session=session
+            )
+        # Режим 2: Ищем презентацию по ID и извлекаем данные
+        else:
+            result = await TemplateService.create_template_from_presentation(
+                presentation_id=presentation_id,
+                user_id=current_user.id,
+                session=session
+            )
+        
         return result
     except ValueError as e:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
     except Exception as e:
@@ -51,7 +72,7 @@ async def delete_template(
 ):
     """Удаляет шаблон по публичному ID"""
     try:
-        result = await template_service.delete_template(
+        result = await TemplateService.delete_template(
             public_id=template_id,
             user_id=current_user.id,
             session=session
@@ -74,7 +95,7 @@ async def get_template(
     session: AsyncSession = Depends(get_session)
 ):
     """Возвращает данные шаблона по публичному ID"""
-    template = await template_service.get_template_by_public_id(
+    template = await TemplateService.get_template_by_public_id(
         public_id=template_id,
         session=session
     )
@@ -93,7 +114,7 @@ async def get_template_viewer(
     session: AsyncSession = Depends(get_session)
 ):
     """Возвращает HTML шаблона для предпросмотра"""
-    html_content = await template_service.get_template_html(
+    html_content = await TemplateService.get_template_html(
         public_id=template_id,
         session=session
     )
@@ -115,7 +136,7 @@ async def list_templates(
     session: AsyncSession = Depends(get_session)
 ):
     """Список всех доступных шаблонов"""
-    templates = await template_service.list_all_templates(session=session)
+    templates = await TemplateService.list_all_templates(session=session)
     return templates
 
 @router.get("/builtin", response_class=JSONResponse)
