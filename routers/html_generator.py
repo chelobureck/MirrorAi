@@ -15,7 +15,7 @@ from ai_services import ai_manager, AIGenerationRequest
 router = APIRouter(prefix="/generate", tags=["html-generation"])
 
 def create_modern_html_presentation(presentation_data: Dict[str, Any]) -> str:
-    """Создает полную HTML страницу с современными стилями"""
+    """Создает полную HTML страницу с современными стилями и двухколоночным layout"""
 
     title = presentation_data.get("title", "Презентация")
     slides = presentation_data.get("slides", [])
@@ -25,24 +25,125 @@ def create_modern_html_presentation(presentation_data: Dict[str, Any]) -> str:
     for i, slide in enumerate(slides):
         slide_title = slide.get("title", "")
         slide_content = slide.get("content", "")
+        slide_image = slide.get("image", None)  # Проверяем наличие изображения
         slide_type = slide.get("type", "content")
         
         # Добавляем класс для типа слайда
         slide_class = f"slide slide-{slide_type}"
         if i == 0:
             slide_class += " active"
-            
-        slides_html += f"""
-         <div class="{slide_class}" data-slide="{i}">
-            <div class="slide-content">
-                {slide_title}
-                {slide_content}
+        
+        # Генерация HTML для слайда
+        if slide_image:
+            slides_html += f"""
+            <div class="{slide_class}" data-slide="{i}">
+                <div class="slide-content">
+                    <div class="text-column">
+                        <h2>{slide_title}</h2>
+                        <div class="content">{slide_content}</div>
+                    </div>
+                    <div class="image-column">
+                        <img src="{slide_image}" alt="Slide image" />
+                    </div>
+                </div>
             </div>
-        </div>
-        """
+            """
+        else:
+            slides_html += f"""
+            <div class="{slide_class}" data-slide="{i}">
+                <div class="slide-content">
+                    <div class="text-column full-width">
+                        <h2>{slide_title}</h2>
+                        <div class="content">{slide_content}</div>
+                    </div>
+                </div>
+            </div>
+            """
 
     # Создаем полную HTML страницу с современными стилями
-    html_content = f""""""  
+    html_content = f"""
+    <!DOCTYPE html>
+    <html lang="ru">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>{title}</title>
+        <style>
+            body {{
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 0;
+                background-color: #f8f9fa;
+                color: #333;
+            }}
+            .slide {{
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                padding: 20px;
+                min-height: 100vh;
+                box-sizing: border-box;
+            }}
+            .slide-content {{
+                display: flex;
+                flex-wrap: wrap;
+                max-width: 1200px;
+                width: 100%;
+                margin: auto;
+                background: #fff;
+                border-radius: 8px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                overflow: hidden;
+            }}
+            .text-column {{
+                flex: 0 0 60%;
+                padding: 20px;
+                box-sizing: border-box;
+            }}
+            .image-column {{
+                flex: 0 0 40%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 20px;
+                box-sizing: border-box;
+            }}
+            .image-column img {{
+                max-width: 100%;
+                height: auto;
+                border-radius: 8px;
+            }}
+            .text-column.full-width {{
+                flex: 0 0 100%;
+                text-align: center;
+            }}
+            h2 {{
+                font-size: 24px;
+                margin-bottom: 16px;
+            }}
+            .content {{
+                font-size: 16px;
+                line-height: 1.5;
+            }}
+            @media (max-width: 768px) {{
+                .slide-content {{
+                    flex-direction: column;
+                }}
+                .text-column, .image-column {{
+                    flex: 0 0 100%;
+                }}
+                .text-column.full-width {{
+                    text-align: center;
+                }}
+            }}
+        </style>
+    </head>
+    <body>
+        {slides_html}
+    </body>
+    </html>
+    """
 
     return html_content
 
