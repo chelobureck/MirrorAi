@@ -17,6 +17,8 @@ from config.settings import get_settings
 from fastapi.responses import RedirectResponse
 import httpx
 import secrets
+from utils.email import send_verification_email
+import random
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 settings = get_settings()
@@ -172,10 +174,13 @@ async def email_verification_request(
     if not user:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
     token = secrets.token_urlsafe(32)
+    code = str(random.randint(100000, 999999))
     user.email_verification_token = token
+    user.email_verification_code = code
     await session.commit()
-    # Здесь должна быть отправка email (заглушка)
-    return EmailVerificationResponse(message="Письмо отправлено (заглушка)")
+    # Реальная отправка email
+    await send_verification_email(user.email, token, code)
+    return EmailVerificationResponse(message="Письмо отправлено")
 
 @router.get("/verify-email", response_model=EmailVerificationResponse)
 async def verify_email(token: str, session: AsyncSession = Depends(get_session)):
