@@ -57,7 +57,7 @@ async def startup():
     
     # Инициализируем Redis для rate limiting
     redis_client = redis.from_url(
-        f"rediss://{settings.REDIS_HOST}:{settings.REDIS_PORT}",
+        settings.REDIS_URL,  # полный URL, включая логин и пароль
         encoding="utf-8",
         decode_responses=True
     )
@@ -128,3 +128,5 @@ async def api_health():
             "Template Service - управление публичными шаблонами презентаций"
         ]
     }
+
+print("REDIS URL:", )
