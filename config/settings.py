@@ -22,29 +22,29 @@ class Settings(BaseSettings):
     USE_POSTGRES: str = "false"
     
     # Настройки безопасности
-    SECRET_KEY: str = "your_secret_key"
+    SECRET_KEY: str = "your_secret_key_change_in_production"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
     # Настройки базы данных
-    POSTGRES_USER: str
-    POSTGRES_PASSWORD: str
-    POSTGRES_SERVER: str
-    POSTGRES_PORT: str
-    POSTGRES_DB: str
+    POSTGRES_USER: str = ""
+    POSTGRES_PASSWORD: str = ""
+    POSTGRES_SERVER: str = "localhost"
+    POSTGRES_PORT: str = "5432"
+    POSTGRES_DB: str = "saydeck"
     
     # Настройки Redis для rate limiting
-    REDIS_HOST: str
+    REDIS_HOST: str = "localhost"
     REDIS_PORT: int = 6379
     
     # Настройки OpenAI
-    OPENAI_API_KEY: str
+    OPENAI_API_KEY: str = ""
     
     # Настройки Groq
-    GROQ_API_KEY: str = "your_groq_key"
+    GROQ_API_KEY: str = ""
     
     # Настройки Pexels API для поиска изображений
-    PEXELS_API_KEY: str = "your_pexels_api_key"
+    PEXELS_API_KEY: str = ""
     
     # Настройки Ollama (локальная Llama)
     OLLAMA_BASE_URL: str = "http://localhost:11434"
@@ -55,13 +55,13 @@ class Settings(BaseSettings):
     IMAGE_MICROSERVICE_TIMEOUT: int = 30
     
     # Настройки Google OAuth
-    GOOGLE_CLIENT_ID: str = "your_google_client_id"
-    GOOGLE_CLIENT_SECRET: str = "your_google_client_secret"
+    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: str = ""
     GOOGLE_REDIRECT_URI: str = "http://localhost:8000/auth/google-callback"
     
     # Настройки Gmail для отправки писем
-    GMAIL_USER: str
-    GMAIL_APP_PASSWORD: str
+    GMAIL_USER: str = ""
+    GMAIL_APP_PASSWORD: str = ""
     
     @property
     def DATABASE_URL(self) -> str:
