@@ -57,7 +57,7 @@ async def startup():
     
     # Инициализируем Redis для rate limiting
     redis_client = redis.from_url(
-        f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}",
+        f"rediss://{settings.REDIS_HOST}:{settings.REDIS_PORT}",
         encoding="utf-8",
         decode_responses=True
     )
