@@ -13,7 +13,8 @@ from routers import (
     preferences,
     public,
     enhanced_generator,
-    main_generation
+    main_generation,
+    gpt_test
 )
 from services.template_service import TemplateService
 from ai_services.image_service import image_service
@@ -45,6 +46,7 @@ app.include_router(preferences.router, prefix=settings.API_V1_STR, tags=["prefer
 app.include_router(public.router, prefix=settings.API_V1_STR, tags=["public"])
 app.include_router(enhanced_generator.router, tags=["enhanced-generation"])
 app.include_router(main_generation.router, prefix=settings.API_V1_STR, tags=["main-generation"])
+app.include_router(gpt_test.router, prefix=settings.API_V1_STR, tags=["gpt-testing"])
 
 
 @app.on_event("startup")
@@ -80,6 +82,11 @@ async def shutdown_event():
 @app.get("/")
 async def root():
     return {"message": "Welcome to SayDeck API"}
+
+@app.get("/health")
+async def health():
+    """Простой healthcheck для AWS ECS"""
+    return {"status": "ok"}
 
 @app.get("/api/v1/health")
 async def api_health():
