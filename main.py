@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi_limiter import FastAPILimiter
 import redis.asyncio as redis
 from config.settings import get_settings
-from models.base import Base, engine
+from models.base import Base, engine, init_db
 from routers import (
     auth, 
     html_generator,
@@ -18,6 +18,7 @@ from routers import (
 )
 from services.template_service import TemplateService
 from ai_services.image_service import image_service
+import os
 
 settings = get_settings()
 app = FastAPI(
@@ -51,33 +52,58 @@ app.include_router(gpt_test.router, prefix=settings.API_V1_STR, tags=["gpt-testi
 
 @app.on_event("startup")
 async def startup():
-    # Создаем таблицы в базе данных
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    
-    # Инициализируем Redis для rate limiting
-    redis_client = redis.from_url(
-        settings.REDIS_URL,  # полный URL, включая логин и пароль
-        encoding="utf-8",
-        decode_responses=True
-    )
-    await FastAPILimiter.init(redis_client)
-    
-    print("🚀 База данных и Redis успешно инициализированы!")
-
-    from models.base import get_session
-    gen = get_session()
-    session = await anext(gen)
     try:
-        await TemplateService.create_builtin_templates_in_db(session, user_id=1)
-    finally:
-        await session.close()
+        # Инициализируем базу данных
+        await init_db()
+        print("✅ База данных успешно инициализирована!")
+        
+        # Инициализируем Redis для rate limiting
+        # В Docker используем правильный URL для Redis
+        redis_url = os.getenv("REDIS_URL", "redis://redis:6379")
+        print(f"🔗 Подключение к Redis: {redis_url}")
+        
+        try:
+            redis_client = redis.from_url(
+                redis_url,
+                encoding="utf-8",
+                decode_responses=True
+            )
+            await FastAPILimiter.init(redis_client)
+            print("✅ Redis успешно инициализирован!")
+        except Exception as re:
+            print(f"⚠️ Redis недоступен или не инициализирован: {re}")
+            print("Продолжаем работу без ограничения частоты запросов")
+        
+        # Создаем встроенные шаблоны (без привязки к пользователю)
+        try:
+            from models.base import get_session
+            gen = get_session()
+            session = await anext(gen)
+            try:
+                # Создаем шаблоны без user_id или с NULL
+                await TemplateService.create_builtin_templates_in_db(session, user_id=None)
+                print("✅ Встроенные шаблоны созданы!")
+            finally:
+                await session.close()
+        except Exception as e:
+            print(f"⚠️ Предупреждение: Не удалось создать встроенные шаблоны: {e}")
+            print("Это не критично для работы приложения")
 
-    await image_service._ensure_session()
+        await image_service._ensure_session()
+        print("✅ Image service инициализирован!")
+        
+    except Exception as e:
+        print(f"❌ Ошибка при запуске приложения: {e}")
+        # В production здесь можно добавить логирование и метрики
+        raise
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    await image_service.close_session()
+    try:
+        await image_service.close_session()
+        print("✅ Image service закрыт!")
+    except Exception as e:
+        print(f"❌ Ошибка при закрытии image service: {e}")
 
 @app.get("/")
 async def root():
@@ -86,7 +112,7 @@ async def root():
 @app.get("/health")
 async def health():
     """Простой healthcheck для AWS ECS"""
-    return {"status": "ok"}
+    return {"status": "healthy"}
 
 @app.get("/api/v1/health")
 async def api_health():
@@ -128,5 +154,3 @@ async def api_health():
             "Template Service - управление публичными шаблонами презентаций"
         ]
     }
-
-print("REDIS URL:", )

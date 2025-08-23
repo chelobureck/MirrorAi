@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     POSTGRES_SERVER: str
     POSTGRES_PORT: str
     POSTGRES_DB: str
+    DATABASE_URL: str | None = None
 
     # Redis
     REDIS_URL: str
@@ -51,15 +52,8 @@ class Settings(BaseSettings):
     GMAIL_USER: str
     GMAIL_APP_PASSWORD: str
 
-    @property
-    def DATABASE_URL(self) -> str:
-        if self.USE_POSTGRES.lower() == "true":
-            return (
-                f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
-                f"@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}?sslmode=disable"
-            )
-        else:
-            return "sqlite+aiosqlite:///./saydeck.db"
+    # Окружение
+    ENVIRONMENT: str = "development"
 
     class Config:
         env_file = ".env"
