@@ -5,12 +5,16 @@ import redis.asyncio as redis
 from config.settings import get_settings
 from models.base import Base, engine, init_db
 from routers import (
-    auth,
+    auth, 
+    # html_generator,
     presentations,
     boards,
     templates,
     preferences,
     public,
+    # enhanced_generator,
+    # main_generation,
+    # gpt_test
 )
 from services.template_service import TemplateService
 from ai_services.image_service import image_service
