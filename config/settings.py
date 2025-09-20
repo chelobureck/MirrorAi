@@ -1,77 +1,70 @@
 from pydantic_settings import BaseSettings
-from typing import Optional
 from functools import lru_cache
-import os
+from typing import List, Optional
 
 class Settings(BaseSettings):
     # Основные настройки
-    PROJECT_NAME: str = "SayDeck"
-    VERSION: str = "1.0.0"
+    PROJECT_NAME: str = "MirrorAI"
+    VERSION: str = "0.1.0"
     API_V1_STR: str = "/api/v1"
-    
-    # Настройки CORS
-    BACKEND_CORS_ORIGINS: list = [
-        "http://localhost:3000", 
-        "http://localhost:5173",  # Vite dev server
-        "http://localhost:8000", 
-        "https://saydeck.onrender.com",
-        "*"  # Разрешаем все источники для разработки
-    ]
-    
-    # Переключатель базы данных (для Docker/локальной разработки)
-    USE_POSTGRES: str = "false"
-    
-    # Настройки безопасности
-    SECRET_KEY: str = "your_secret_key"
+
+    # CORS
+    BACKEND_CORS_ORIGINS: List[str] = []
+
+    # Безопасность
+    SECRET_KEY: str = "your-secret-key"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    
-    # Настройки базы данных
-    POSTGRES_USER: str
-    POSTGRES_PASSWORD: str
-    POSTGRES_SERVER: str
-    POSTGRES_PORT: str
-    POSTGRES_DB: str
-    
-    # Настройки Redis для rate limiting
-    REDIS_HOST: str
-    REDIS_PORT: int = 6379
-    
-    # Настройки OpenAI
-    OPENAI_API_KEY: str
-    
-    # Настройки Groq
-    GROQ_API_KEY: str = "your_groq_key"
-    
-    # Настройки Pexels API для поиска изображений
-    PEXELS_API_KEY: str = "your_pexels_api_key"
-    
-    # Настройки Ollama (локальная Llama)
+
+    # База данных
+    USE_POSTGRES: str = "False"
+    POSTGRES_USER: str = "postgres"
+    POSTGRES_PASSWORD: str = "password"
+    POSTGRES_SERVER: str = "localhost"
+    POSTGRES_PORT: str = "5432"
+    POSTGRES_DB: str = "mirrorai"
+    DATABASE_URL: Optional[str] = None
+
+    # Redis
+    REDIS_URL: str = "redis://localhost:6379/0"
+
+    # OpenAI / Groq
+    OPENAI_API_KEY: str = "your-openai-key"
+    GROQ_API_KEY: str = "your-groq-key"
+
+    # Pexels
+    PEXELS_API_KEY: str = "your-pexels-key"
+
+    # Ollama
     OLLAMA_BASE_URL: str = "http://localhost:11434"
-    OLLAMA_MODEL: str = "llama3.1:8b"
-    
-    # Настройки микросервиса изображений
-    IMAGE_MICROSERVICE_URL: str = "http://image-service:8080"
-    IMAGE_MICROSERVICE_TIMEOUT: int = 30
-    
-    # Настройки Google OAuth
-    GOOGLE_CLIENT_ID: str = "your_google_client_id"
-    GOOGLE_CLIENT_SECRET: str = "your_google_client_secret"
-    GOOGLE_REDIRECT_URI: str = "http://localhost:8000/auth/google-callback"
-    
-    # Настройки Gmail для отправки писем
-    GMAIL_USER: str
-    GMAIL_APP_PASSWORD: str
-    
-    @property
-    def DATABASE_URL(self) -> str:
-        # Для локальной разработки используем SQLite
-        import os
-        if self.USE_POSTGRES.lower() == "true":
-            return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}?sslmode=disable"
-        else:
-            return "sqlite+aiosqlite:///./saydeck.db"
-    
+    OLLAMA_MODEL: str = "default-model"
+
+    # Микросервис изображений
+    IMAGE_MICROSERVICE_URL: str = "http://localhost:8001"
+    IMAGE_MICROSERVICE_TIMEOUT: int = 10
+
+    # Google OAuth
+    GOOGLE_CLIENT_ID: str = "your-google-client-id"
+    GOOGLE_CLIENT_SECRET: str = "your-google-client-secret"
+    GOOGLE_REDIRECT_URI: str = "http://localhost:8000/auth/callback"
+
+    # Gmail SMTP
+    GMAIL_USER: str = "your-gmail-user"
+    GMAIL_APP_PASSWORD: str = "your-gmail-app-password"
+
+    # Окружение
+    ENVIRONMENT: str = "development"
+
+    # Добавьте все "лишние" переменные из .env:
+    APP_HOST: Optional[str] = None
+    APP_PORT: Optional[str] = None
+    APP_DEBUG: Optional[str] = None
+    APP_CORS_ORIGINS: Optional[str] = None
+    JWT_SECRET: Optional[str] = None
+    JWT_ALG: Optional[str] = None
+    FIREBASE_PROJECT_ID: Optional[str] = None
+    FIREBASE_ENABLED: Optional[str] = None
+
     class Config:
         env_file = ".env"
         case_sensitive = True

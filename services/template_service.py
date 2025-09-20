@@ -305,7 +305,7 @@ class TemplateService:
         return list(BUILTIN_TEMPLATES.values())
 
     @staticmethod
-    async def create_builtin_templates_in_db(session: AsyncSession, user_id: int = 1):
+    async def create_builtin_templates_in_db(session: AsyncSession, user_id: Optional[int] = None):
         """Загрузить все встроенные шаблоны в БД, если их там нет"""
         from models.template import Template
         for tpl in BUILTIN_TEMPLATES.values():
@@ -322,7 +322,7 @@ class TemplateService:
                     content={},
                     html_content=tpl["html_content"],
                     original_presentation_id=None,
-                    user_id=user_id,
+                    user_id=user_id,  # Может быть None для системных шаблонов
                     is_public=True,
                     preview_image_url=""
                 )

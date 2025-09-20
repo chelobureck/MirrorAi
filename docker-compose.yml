@@ -4,9 +4,9 @@ services:
     build: 
       context: .
       dockerfile: Dockerfile
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    command: uvicorn main:app --host 0.0.0.0 --port 80
     ports:
-      - "8000:8000"
+      - "80:80"
     env_file:
       - .env
     environment:
@@ -14,16 +14,14 @@ services:
       POSTGRES_SERVER: db
       POSTGRES_PORT: 5432
       REDIS_HOST: redis
-      REDIS_PORT: 6379  # Внутри контейнера Redis слушает на 6379
+      REDIS_PORT: 6379
+      USE_POSTGRES: "true"
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_started
-    restart: on-failure
-    volumes:
-      # Монтируем исходный код для live reload
-      - .:/app
+    restart: unless-stopped
     networks:
       - saydeck_network
 
@@ -45,6 +43,7 @@ services:
 
   redis:
     image: redis:7-alpine
+    command: redis-server --bind 0.0.0.0 --protected-mode no
     ports:
       - "6379:6379"  # Для внешнего доступа с хоста
     networks:

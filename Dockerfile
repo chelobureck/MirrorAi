@@ -1,29 +1,18 @@
+# Используем официальный образ Python
 FROM python:3.11-slim
 
+# Устанавливаем рабочую директорию
 WORKDIR /app
 
-# Обновление pip
-RUN pip install --upgrade pip
-
-# Установка системных зависимостей
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
-
-# Копирование файлов зависимостей
-COPY requirements.txt .
-
-# Установка Python зависимостей
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Копирование исходного кода
+# Копируем файлы проекта
 COPY . .
 
-# Создание директории для загрузок
-RUN mkdir -p uploads
+# Устанавливаем зависимости
+RUN pip install --upgrade pip
+RUN pip install -r requirements.txt
 
-# Открытие порта
+# Открываем порт
 EXPOSE 8000
 
-# Запуск приложения
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Команда запуска uvicorn с поддержкой переменной PORT (по умолчанию 8000)
+CMD [CMD-SHELL,python -c "import sys,urllib.request; \ resp=urllib.request.urlopen('http://localhost:8000/api/v1/health', timeout=5); \ sys.exit(0 if resp.status==200 else 1)"]
