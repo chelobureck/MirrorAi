@@ -5,16 +5,12 @@ import redis.asyncio as redis
 from config.settings import get_settings
 from models.base import Base, engine, init_db
 from routers import (
-    auth, 
-    html_generator,
+    auth,
     presentations,
     boards,
     templates,
     preferences,
     public,
-    enhanced_generator,
-    main_generation,
-    gpt_test
 )
 from services.template_service import TemplateService
 from ai_services.image_service import image_service
@@ -39,15 +35,15 @@ app.add_middleware(
 
 # Подключаем роутеры
 app.include_router(auth.router, prefix=settings.API_V1_STR, tags=["auth"])
-app.include_router(html_generator.router, prefix=settings.API_V1_STR, tags=["html-generation"])
+# app.include_router(html_generator.router, prefix=settings.API_V1_STR, tags=["html-generation"])
 app.include_router(presentations.router, prefix=settings.API_V1_STR, tags=["presentations"])
 app.include_router(boards.router, prefix=settings.API_V1_STR, tags=["boards"])
 app.include_router(templates.router, tags=["templates"])  # Убираем prefix, так как он уже в роутере
 app.include_router(preferences.router, prefix=settings.API_V1_STR, tags=["preferences"])
 app.include_router(public.router, prefix=settings.API_V1_STR, tags=["public"])
-app.include_router(enhanced_generator.router, tags=["enhanced-generation"])
-app.include_router(main_generation.router, prefix=settings.API_V1_STR, tags=["main-generation"])
-app.include_router(gpt_test.router, prefix=settings.API_V1_STR, tags=["gpt-testing"])
+# app.include_router(enhanced_generator.router, tags=["enhanced-generation"])
+# app.include_router(main_generation.router, prefix=settings.API_V1_STR, tags=["main-generation"])
+# app.include_router(gpt_test.router, prefix=settings.API_V1_STR, tags=["gpt-testing"])
 
 
 @app.on_event("startup")

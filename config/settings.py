@@ -65,6 +65,28 @@ class Settings(BaseSettings):
     FIREBASE_PROJECT_ID: Optional[str] = None
     FIREBASE_ENABLED: Optional[str] = None
 
+    # --- ДОБАВЛЕНЫ недостающие переменные из .env ---
+    OPENAI_BASE_URL: Optional[str] = None
+    OPENAI_MODEL: Optional[str] = None
+    OPENAI_TIMEOUT: Optional[str] = None
+
+    DB_HOST: Optional[str] = None
+    DB_PORT: Optional[str] = None
+    DB_USER: Optional[str] = None
+    DB_PASSWORD: Optional[str] = None
+    DB_NAME: Optional[str] = None
+
+    REDIS_HOST: Optional[str] = None
+    REDIS_PORT: Optional[str] = None
+    REDIS_DB: Optional[str] = None
+    REDIS_TTL_SECONDS: Optional[str] = None
+
+    GOOGLE_REFRESH_TOKEN: Optional[str] = None
+
+    SMTP_HOST: Optional[str] = None
+    SMTP_PORT: Optional[str] = None
+    SMTP_USER: Optional[str] = None
+
     class Config:
         env_file = ".env"
         case_sensitive = True
