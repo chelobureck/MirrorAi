@@ -1,0 +1,47 @@
+# Core Framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+
+# Database
+sqlalchemy==2.0.23
+asyncpg==0.29.0
+aiosqlite==0.19.0
+alembic==1.13.1
+
+# Authentication & Security
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-multipart==0.0.6
+
+# API & HTTP
+httpx==0.24.1
+aiohttp==3.9.1
+aiofiles==23.2.1
+
+# Configuration & Environment
+python-dotenv==1.0.0
+pydantic==2.5.2
+pydantic-settings==2.1.0
+email-validator==2.1.0
+
+# AI & ML Clients
+openai==1.6.1
+groq==0.4.2
+
+# Rate Limiting & Caching
+fastapi-limiter==0.1.5
+redis==4.5.5
+
+# File Processing
+python-pptx==1.0.1
+reportlab==4.0.7
+
+# Development & Testing (optional for production)
+pytest==7.4.3
+pytest-asyncio==0.21.1
+
+# Testing dependencies
+httpx==0.24.1  # Already included above but needed for TestClient
+
+# Email
+aiosmtplib==3.0.1
