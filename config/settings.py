@@ -1,77 +1,60 @@
 from pydantic_settings import BaseSettings
-from typing import Optional
 from functools import lru_cache
-import os
+from typing import List
 
 class Settings(BaseSettings):
     # Основные настройки
-    PROJECT_NAME: str = "SayDeck"
-    VERSION: str = "1.0.0"
-    API_V1_STR: str = "/api/v1"
-    
-    # Настройки CORS
-    BACKEND_CORS_ORIGINS: list = [
-        "http://localhost:3000", 
-        "http://localhost:5173",  # Vite dev server
-        "http://localhost:8000", 
-        "https://saydeck.onrender.com",
-        "*"  # Разрешаем все источники для разработки
-    ]
-    
-    # Переключатель базы данных (для Docker/локальной разработки)
-    USE_POSTGRES: str = "false"
-    
-    # Настройки безопасности
-    SECRET_KEY: str = "your_secret_key_change_in_production"
-    ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    
-    # Настройки базы данных
-    POSTGRES_USER: str = ""
-    POSTGRES_PASSWORD: str = ""
-    POSTGRES_SERVER: str = "localhost"
-    POSTGRES_PORT: str = "5432"
-    POSTGRES_DB: str = "saydeck"
-    
-    # Настройки Redis для rate limiting
-    REDIS_HOST: str = "localhost"
-    REDIS_PORT: int = 6379
-    
-    # Настройки OpenAI
-    OPENAI_API_KEY: str = ""
-    
-    # Настройки Groq
-    GROQ_API_KEY: str = ""
-    
-    # Настройки Pexels API для поиска изображений
-    PEXELS_API_KEY: str = ""
-    
-    # Настройки Ollama (локальная Llama)
-    OLLAMA_BASE_URL: str = "http://localhost:11434"
-    OLLAMA_MODEL: str = "llama3.1:8b"
-    
-    # Настройки микросервиса изображений
-    IMAGE_MICROSERVICE_URL: str = "http://image-service:8080"
-    IMAGE_MICROSERVICE_TIMEOUT: int = 30
-    
-    # Настройки Google OAuth
-    GOOGLE_CLIENT_ID: str = ""
-    GOOGLE_CLIENT_SECRET: str = ""
-    GOOGLE_REDIRECT_URI: str = "http://localhost:8000/auth/google-callback"
-    
-    # Настройки Gmail для отправки писем
-    GMAIL_USER: str = ""
-    GMAIL_APP_PASSWORD: str = ""
-    
-    @property
-    def DATABASE_URL(self) -> str:
-        # Для локальной разработки используем SQLite
-        import os
-        if self.USE_POSTGRES.lower() == "true":
-            return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}?sslmode=disable"
-        else:
-            return "sqlite+aiosqlite:///./saydeck.db"
-    
+    PROJECT_NAME: str
+    VERSION: str
+    API_V1_STR: str
+
+    # CORS
+    BACKEND_CORS_ORIGINS: List[str]
+
+    # Безопасность
+    SECRET_KEY: str
+    ALGORITHM: str
+    ACCESS_TOKEN_EXPIRE_MINUTES: int
+
+    # База данных
+    USE_POSTGRES: str
+    POSTGRES_USER: str
+    POSTGRES_PASSWORD: str
+    POSTGRES_SERVER: str
+    POSTGRES_PORT: str
+    POSTGRES_DB: str
+    DATABASE_URL: str | None = None
+
+    # Redis
+    REDIS_URL: str
+
+    # OpenAI / Groq
+    OPENAI_API_KEY: str
+    GROQ_API_KEY: str
+
+    # Pexels
+    PEXELS_API_KEY: str
+
+    # Ollama
+    OLLAMA_BASE_URL: str
+    OLLAMA_MODEL: str
+
+    # Микросервис изображений
+    IMAGE_MICROSERVICE_URL: str
+    IMAGE_MICROSERVICE_TIMEOUT: int
+
+    # Google OAuth
+    GOOGLE_CLIENT_ID: str
+    GOOGLE_CLIENT_SECRET: str
+    GOOGLE_REDIRECT_URI: str
+
+    # Gmail SMTP
+    GMAIL_USER: str
+    GMAIL_APP_PASSWORD: str
+
+    # Окружение
+    ENVIRONMENT: str = "development"
+
     class Config:
         env_file = ".env"
         case_sensitive = True
