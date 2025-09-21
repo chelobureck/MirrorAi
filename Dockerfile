@@ -14,5 +14,4 @@ RUN pip install -r requirements.txt
 # Открываем порт
 EXPOSE 8000
 
-# Команда запуска uvicorn с поддержкой переменной PORT (по умолчанию 8000)
-CMD [CMD-SHELL,python -c "import sys,urllib.request; \ resp=urllib.request.urlopen('http://localhost:8000/api/v1/health', timeout=5); \ sys.exit(0 if resp.status==200 else 1)"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
