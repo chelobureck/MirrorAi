@@ -21,7 +21,8 @@ async def get_presentations(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
-    result = await session.execute(select(Presentation).where(Presentation.user_id == current_user.id))
+    stmt = select(Presentation).where(Presentation.user_id == current_user.id)
+    result = await session.execute(stmt)
     presentations = result.scalars().all()
     return presentations
 
@@ -31,7 +32,11 @@ async def get_presentation(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
-    result = await session.execute(select(Presentation).where(Presentation.id == presentation_id, Presentation.user_id == current_user.id))
+    stmt = select(Presentation).where(
+        (Presentation.id == presentation_id) & 
+        (Presentation.user_id == current_user.id)
+    )
+    result = await session.execute(stmt)
     presentation = result.scalars().first()
     
     if not presentation:
@@ -55,12 +60,14 @@ async def create_presentation(
         if len(presentation.content.get("slides", [])) > 5:
             raise HTTPException(status_code=403, detail="Гостям доступно не более 5 слайдов")
         raise HTTPException(status_code=403, detail="Гостям нельзя сохранять презентации")
+    
     new_presentation = Presentation(
-        title=presentation.title,
-        content=presentation.content,
         user_id=current_user.id,
         board_id=presentation.board_id
     )
+    new_presentation.title = presentation.title
+    new_presentation.content = presentation.content
+    
     session.add(new_presentation)
     await session.commit()
     await session.refresh(new_presentation)
@@ -73,7 +80,11 @@ async def update_presentation(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
-    result = await session.execute(select(Presentation).where(Presentation.id == presentation_id, Presentation.user_id == current_user.id))
+    stmt = select(Presentation).where(
+        (Presentation.id == presentation_id) & 
+        (Presentation.user_id == current_user.id)
+    )
+    result = await session.execute(stmt)
     db_presentation = result.scalars().first()
     if not db_presentation:
         raise HTTPException(status_code=404, detail="Presentation not found")
@@ -90,7 +101,11 @@ async def delete_presentation(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
-    result = await session.execute(select(Presentation).where(Presentation.id == presentation_id, Presentation.user_id == current_user.id))
+    stmt = select(Presentation).where(
+        (Presentation.id == presentation_id) & 
+        (Presentation.user_id == current_user.id)
+    )
+    result = await session.execute(stmt)
     db_presentation = result.scalars().first()
     if not db_presentation:
         raise HTTPException(status_code=404, detail="Presentation not found")
