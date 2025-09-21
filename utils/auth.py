@@ -43,9 +43,9 @@ async def get_current_user(
     )
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        email: str = payload.get("sub")
-        role: str = payload.get("role")
-        credits: int = payload.get("credits")
+        email: str = str(payload.get("sub"))
+        role: str = str(payload.get("role"))
+        credits: int = int(payload.get("credits") or 0)
         if email is None:
             raise credentials_exception
         token_data = TokenData(email=email, role=role, credits=credits)
@@ -72,7 +72,7 @@ async def get_current_user_by_refresh_token(
         payload = jwt.decode(refresh_token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         if payload.get("type") != "refresh":
             raise credentials_exception
-        email: str = payload.get("sub")
+        email: str = str(payload.get("sub"))
         if email is None:
             raise credentials_exception
     except JWTError:
@@ -91,12 +91,12 @@ async def get_current_user_optional(
     Опциональная авторизация - возвращает пользователя если токен валидный, 
     иначе None (для гостей)
     """
-    if not token or not token.credentials:
+    if not token:
         return None
     
     try:
-        payload = jwt.decode(token.credentials, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        email: str = payload.get("sub")
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        email: str = str(payload.get("sub"))
         if email is None:
             return None
             

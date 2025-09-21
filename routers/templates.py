@@ -8,7 +8,7 @@ from typing import List, Optional, Optional
 from models.base import get_session
 from models.user import User
 from utils.auth import get_current_user
-from services.template_service import TemplateService
+from service.template_service import TemplateService
 from schemas.template import (
     TemplateResponse, 
     TemplateDetail, 

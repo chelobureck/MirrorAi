@@ -1,49 +1,53 @@
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker
-from config.settings import get_settings
-import ssl
 import os
+import ssl
 import urllib.parse
-from typing import Optional
+from typing import Any, Dict
+
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.orm import DeclarativeBase, sessionmaker
+
+from config.settings import get_settings
+
+# Используем DeclarativeBase как рекомендуемый подход в SQLAlchemy 2.0.
+# Вы можете раскомментировать эти строки, чтобы обновить код.
+# class Base(DeclarativeBase):
+#     pass
+# Временно оставлено для обратной совместимости с более старыми версиями.
+Base = declarative_base()
 
 settings = get_settings()
 
 
 def _build_database_url() -> str:
-    """Строит правильный URL для подключения к базе данных.
+    """
+    Строит правильный URL для подключения к базе данных.
     Приоритеты:
     1) DATABASE_URL (полный DSN)
     2) POSTGRES_SERVER как полный DSN
     3) Сборка из компонент (USER/PASSWORD/SERVER/PORT/DB)
     """
     if settings.USE_POSTGRES.lower() == "true":
-        # 1) Прямой DSN через DATABASE_URL
         db_url_env = os.getenv("DATABASE_URL") or settings.DATABASE_URL
         if db_url_env:
             dsn = db_url_env
-            # Убираем sslmode/ssl из URL, т.к. SSL управляется через connect_args
             if "?" in dsn:
                 base, _, _ = dsn.partition("?")
                 dsn = base
             return dsn
 
-        # 2) POSTGRES_SERVER задан как полный DSN
         server_val = settings.POSTGRES_SERVER or ""
         if "://" in server_val:
             dsn = server_val
-            # Если в DSN встречается placeholder ':password@', подставим реальный пароль
             if ":password@" in dsn and settings.POSTGRES_PASSWORD:
                 dsn = dsn.replace(
                     ":password@",
                     f":{urllib.parse.quote_plus(settings.POSTGRES_PASSWORD)}@"
                 )
-            # Убираем sslmode из URL, так как он будет передан через connect_args
             if "?sslmode=" in dsn:
                 dsn = dsn.split("?")[0]
             return dsn
 
-        # 3) Сборка из компонент (без sslmode в URL)
         safe_password = urllib.parse.quote_plus(settings.POSTGRES_PASSWORD)
         base_url = (
             f"postgresql+asyncpg://{settings.POSTGRES_USER}:{safe_password}"
@@ -54,30 +58,26 @@ def _build_database_url() -> str:
         return "sqlite+aiosqlite:///./saydeck.db"
 
 
-# Создаем движок с правильными настройками
 database_url = _build_database_url()
 
 if "sqlite" in database_url:
-    # Для SQLite используем простые настройки
+    connect_args: Dict[str, Any] = {}
     engine = create_async_engine(
         database_url,
         echo=True,
         pool_pre_ping=True
     )
 else:
-    # Для PostgreSQL используем расширенные настройки
-    # SSL настройки передаем через connect_args, а не через URL
     is_production = (os.getenv("ENVIRONMENT") or settings.ENVIRONMENT) == "production"
     
-    connect_args = {
+    # Исправлено: Используем более гибкий тип для connect_args, чтобы избежать ошибок типизации.
+    connect_args: Dict[str, Any] = {
         "server_settings": {
             "application_name": "SayDeck",
             "timezone": "UTC"
         }
     }
     
-    # SSL настройки для asyncpg
-    # В AWS/production и при явных признаках sslmode=require используем SSLContext
     env_value = os.getenv("ENVIRONMENT") or settings.ENVIRONMENT
     is_aws_or_production = (
         is_production or 
@@ -95,7 +95,6 @@ else:
     must_use_ssl = is_aws_or_production or ssl_required_by_url or ssl_required_by_host
 
     if must_use_ssl:
-        # Управляем верификацией сертификата через переменную POSTGRES_SSL_VERIFY=true|false (по умолчанию true)
         ssl_verify = (os.getenv("POSTGRES_SSL_VERIFY") or "true").lower() == "true"
         ssl_ctx = ssl.create_default_context()
         if not ssl_verify:
@@ -106,7 +105,6 @@ else:
             print(f"🔒 SSL: verified context (verify=TRUE) для окружения: {env_value}")
         connect_args["ssl"] = ssl_ctx
     else:
-        # Для локальной разработки можно отключить SSL
         connect_args["ssl"] = False
         print(f"🔓 SSL отключен для окружения: {env_value}")
     
@@ -120,8 +118,9 @@ else:
         connect_args=connect_args
     )
 
-async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
-Base = declarative_base()
+# Исправлено: заменено 'sessionmaker' на 'async_sessionmaker'.
+# Это основной корень вашей проблемы с асинхронностью.
+async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 
 async def get_session():
@@ -148,4 +147,4 @@ async def init_db():
         print(f"🔍 Тип ошибки: {type(e).__name__}")
         if "SSL" in str(e):
             print("💡 Подсказка: Проверьте настройки SSL и переменную ENVIRONMENT")
-        raise 
+        raise

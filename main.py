@@ -6,18 +6,12 @@ from config.settings import get_settings
 from models.base import Base, engine, init_db
 from routers import (
     auth, 
-    # html_generator,
     presentations,
     boards,
     templates,
     preferences,
     public,
-    # enhanced_generator,
-    # main_generation,
-    # gpt_test
 )
-from services.template_service import TemplateService
-from ai_services.image_service import image_service
 import os
 
 settings = get_settings()
@@ -39,16 +33,11 @@ app.add_middleware(
 
 # Подключаем роутеры
 app.include_router(auth.router, prefix=settings.API_V1_STR, tags=["auth"])
-# app.include_router(html_generator.router, prefix=settings.API_V1_STR, tags=["html-generation"])
 app.include_router(presentations.router, prefix=settings.API_V1_STR, tags=["presentations"])
 app.include_router(boards.router, prefix=settings.API_V1_STR, tags=["boards"])
 app.include_router(templates.router, tags=["templates"])  # Убираем prefix, так как он уже в роутере
 app.include_router(preferences.router, prefix=settings.API_V1_STR, tags=["preferences"])
 app.include_router(public.router, prefix=settings.API_V1_STR, tags=["public"])
-# app.include_router(enhanced_generator.router, tags=["enhanced-generation"])
-# app.include_router(main_generation.router, prefix=settings.API_V1_STR, tags=["main-generation"])
-# app.include_router(gpt_test.router, prefix=settings.API_V1_STR, tags=["gpt-testing"])
-
 
 @app.on_event("startup")
 async def startup():
@@ -73,37 +62,10 @@ async def startup():
         except Exception as re:
             print(f"⚠️ Redis недоступен или не инициализирован: {re}")
             print("Продолжаем работу без ограничения частоты запросов")
-        
-        # Создаем встроенные шаблоны (без привязки к пользователю)
-        try:
-            from models.base import get_session
-            gen = get_session()
-            session = await anext(gen)
-            try:
-                # Создаем шаблоны без user_id или с NULL
-                await TemplateService.create_builtin_templates_in_db(session, user_id=None)
-                print("✅ Встроенные шаблоны созданы!")
-            finally:
-                await session.close()
-        except Exception as e:
-            print(f"⚠️ Предупреждение: Не удалось создать встроенные шаблоны: {e}")
-            print("Это не критично для работы приложения")
-
-        await image_service._ensure_session()
-        print("✅ Image service инициализирован!")
-        
     except Exception as e:
         print(f"❌ Ошибка при запуске приложения: {e}")
         # В production здесь можно добавить логирование и метрики
         raise
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    try:
-        await image_service.close_session()
-        print("✅ Image service закрыт!")
-    except Exception as e:
-        print(f"❌ Ошибка при закрытии image service: {e}")
 
 @app.get("/")
 async def root():
@@ -121,23 +83,14 @@ async def api_health():
         "status": "healthy",
         "message": "SayDeck API v1 - AI Презентации с системой шаблонов",
         "endpoints": {
-            "generate_html": "/api/v1/generate/ (POST)",
-            "generate_json": "/api/v1/generate/json (POST)",
-            "enhanced_generate": "/api/v1/enhanced/generate (POST)",
-            "search_images": "/api/v1/enhanced/search-images (GET)",
             "presentations": "/api/v1/presentations",
             "public": "/api/v1/public",
             "templates": "/api/v1/templates",
             "export": "/api/v1/export"
         },
         "features": [
-            "Создание HTML презентаций из текста (Groq/OpenAI)",
-            "Автоматический поиск и вставка изображений (Pexels API)",
-            "Современный дизайн с CSS анимациями", 
             "Автоматическое определение параметров",
             "Сохранение в базу данных",
-            "Навигация по слайдам",
-            "Умный анализ контента для подбора изображений",
             "Система публичных шаблонов презентаций"
         ],
         "template_system": {
@@ -148,9 +101,6 @@ async def api_health():
             "list_templates": "/api/v1/templates (GET)"
         },
         "new_services": [
-            "Enhanced Generator - расширенная генерация с изображениями",
-            "Image Service - поиск изображений через Pexels API",
-            "Smart Content Analysis - анализ текста для подбора изображений",
             "Template Service - управление публичными шаблонами презентаций"
         ]
     }

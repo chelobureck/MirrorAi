@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional, Dict, Any
 from datetime import datetime
+from sqlalchemy import Column
 
 class TemplateCreate(BaseModel):
     presentation_id: int
@@ -15,7 +16,7 @@ class TemplateSaveRequest(BaseModel):
 class TemplateResponse(BaseModel):
     templateId: str  # public_id
     title: str
-    createdAt: datetime
+    createdAt: Column[datetime]
     
     class Config:
         from_attributes = True

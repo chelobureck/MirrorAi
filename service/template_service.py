@@ -2,14 +2,14 @@
 Template Service - сервис для работы с шаблонами презентаций
 """
 import uuid
+from datetime import datetime
 from typing import List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, Column
 from models.template import Template
 from models.presentation import Presentation
 from models.user import User
 from schemas.template import TemplateResponse, TemplateDetail, TemplateCreateResponse, TemplateDeleteResponse
-
 
 # --- Встроенные шаблоны ---
 BUILTIN_TEMPLATES = {
@@ -41,7 +41,7 @@ BUILTIN_TEMPLATES = {
         "title": "Природа",
         "html_content": """
         <!DOCTYPE html>
-        <html lang=\"ru\">
+        <html lang=\"ру\">
         <head>
             <meta charset=\"UTF-8\">
             <title>{{title}}</title>
@@ -64,7 +64,7 @@ BUILTIN_TEMPLATES = {
         "title": "Транспорт",
         "html_content": """
         <!DOCTYPE html>
-        <html lang=\"ru\">
+        <html lang=\"ру\">
         <head>
             <meta charset=\"UTF-8\">
             <title>{{title}}</title>
@@ -87,7 +87,7 @@ BUILTIN_TEMPLATES = {
         "title": "IT Технологии",
         "html_content": """
         <!DOCTYPE html>
-        <html lang=\"ru\">
+        <html lang=\"ру\">
         <head>
             <meta charset=\"UTF-8\">
             <title>{{title}}</title>
@@ -110,7 +110,7 @@ BUILTIN_TEMPLATES = {
         "title": "Абстракция",
         "html_content": """
         <!DOCTYPE html>
-        <html lang=\"ru\">
+        <html lang=\"ру\">
         <head>
             <meta charset=\"UTF-8\">
             <title>{{title}}</title>
@@ -136,17 +136,18 @@ class TemplateService:
     @staticmethod
     async def create_template_from_presentation(
         presentation_id: int,
-        user_id: int,
+        user_id: Column[int],
         session: AsyncSession
     ) -> TemplateCreateResponse:
         """Создает шаблон из существующей презентации"""
         
         # Получаем оригинальную презентацию
-        # Ищем среди презентаций пользователя ИЛИ публичных презентаций
         result = await session.execute(
             select(Presentation).where(
                 Presentation.id == presentation_id,
-                (Presentation.user_id == user_id) | (Presentation.is_public == True)
+                # Улучшено условие для доступа к презентации:
+                # либо она принадлежит пользователю, либо она публичная.
+                (Presentation.user_id == user_id) | (Presentation.is_public.is_(True))
             )
         )
         presentation = result.scalar_one_or_none()
@@ -156,26 +157,27 @@ class TemplateService:
         
         # Извлекаем title и HTML из презентации
         if isinstance(presentation.content, dict):
+            # Проверяем наличие ключа 'html' в content
+            html_content = presentation.content.get("html_content") # Предполагаем, что поле html_content существует
+            if not html_content:
+                html_content = presentation.content.get("html", "") # Проверяем старое поле 'html'
+
             title = presentation.content.get("title", f"Template from Presentation {presentation_id}")
-            # Если есть готовый HTML в content
-            html_content = presentation.content.get("html", "")
-            
-            # Если HTML нет, пытаемся сгенерировать из структуры
+
+            # Если HTML-контент пуст, генерируем его из слайдов
             if not html_content:
                 try:
-                    # Простая генерация HTML из slides
                     slides = presentation.content.get("slides", [])
                     if slides:
-                        html_parts = ["<!DOCTYPE html><html><head><title>{}</title></head><body>".format(title)]
+                        html_parts = [f"<!DOCTYPE html><html><head><title>{title}</title></head><body>"]
                         for i, slide in enumerate(slides, 1):
                             slide_title = slide.get("title", f"Slide {i}")
                             slide_content = slide.get("content", "")
                             html_parts.append(f"<div class='slide'><h2>{slide_title}</h2><div>{slide_content}</div></div>")
                         html_parts.append("</body></html>")
                         html_content = "\n".join(html_parts)
-                    else:
-                        html_content = f"<html><head><title>{title}</title></head><body><h1>{title}</h1><p>No content available</p></body></html>"
                 except Exception as e:
+                    # Если генерация не удалась, предоставляем базовый HTML
                     html_content = f"<html><head><title>{title}</title></head><body><h1>{title}</h1><p>Content generation error: {str(e)}</p></body></html>"
         else:
             title = f"Template from Presentation {presentation_id}"
@@ -186,7 +188,7 @@ class TemplateService:
             public_id=str(uuid.uuid4()),
             title=title,
             name=title,
-            content=presentation.content,  # Копируем весь контент
+            content=presentation.content,
             html_content=html_content,
             original_presentation_id=presentation.id,
             user_id=user_id,
@@ -199,7 +201,7 @@ class TemplateService:
         await session.refresh(template)
         
         return TemplateCreateResponse(
-            templateId=template.public_id,
+            templateId=str(template.public_id),
             message=f"Template '{title}' created successfully from presentation {presentation_id}"
         )
     
@@ -209,11 +211,11 @@ class TemplateService:
         session: AsyncSession
     ) -> Optional[TemplateDetail]:
         """Получает шаблон по публичному ID"""
-        
+        # Улучшен запрос: `is_(True)` вместо `== True` для корректной работы с булевыми полями в SQLAlchemy
         result = await session.execute(
             select(Template).where(
                 Template.public_id == public_id,
-                Template.is_public == True
+                Template.is_public.is_(True)
             )
         )
         template = result.scalar_one_or_none()
@@ -222,9 +224,9 @@ class TemplateService:
             return None
             
         return TemplateDetail(
-            templateId=template.public_id,
-            html=template.html_content,
-            title=template.title
+            templateId=str(template.public_id),
+            html=str(template.html_content),
+            title=str(template.title)
         )
     
     @staticmethod
@@ -235,19 +237,20 @@ class TemplateService:
         """Получает HTML шаблона для просмотра"""
         
         result = await session.execute(
-            select(Template).where(
+            select(Template.html_content).where(
                 Template.public_id == public_id,
-                Template.is_public == True
+                Template.is_public.is_(True)
             )
         )
-        template = result.scalar_one_or_none()
+        html_content = result.scalar_one_or_none()
         
-        return template.html_content if template else None
+        # Возвращаем сам контент, если он есть
+        return html_content
     
     @staticmethod
     async def delete_template(
         public_id: str,
-        user_id: int,
+        user_id: Column[int],
         session: AsyncSession
     ) -> TemplateDeleteResponse:
         """Удаляет шаблон по публичному ID (только владелец)"""
@@ -255,7 +258,7 @@ class TemplateService:
         result = await session.execute(
             select(Template).where(
                 Template.public_id == public_id,
-                Template.user_id == user_id  # Только владелец может удалять
+                Template.user_id == user_id
             )
         )
         template = result.scalar_one_or_none()
@@ -279,7 +282,7 @@ class TemplateService:
         
         result = await session.execute(
             select(Template)
-            .where(Template.is_public == True)
+            .where(Template.is_public.is_(True))
             .order_by(Template.created_at.desc())
             .limit(limit)
         )
@@ -287,8 +290,8 @@ class TemplateService:
         
         return [
             TemplateResponse(
-                templateId=template.public_id,
-                title=template.title,
+                templateId=str(template.public_id),
+                title=str(template.title),
                 createdAt=template.created_at
             )
             for template in templates
@@ -307,9 +310,7 @@ class TemplateService:
     @staticmethod
     async def create_builtin_templates_in_db(session: AsyncSession, user_id: Optional[int] = None):
         """Загрузить все встроенные шаблоны в БД, если их там нет"""
-        from models.template import Template
         for tpl in BUILTIN_TEMPLATES.values():
-            # Проверяем, есть ли уже такой шаблон
             result = await session.execute(
                 select(Template).where(Template.public_id == tpl["id"])
             )
@@ -322,7 +323,7 @@ class TemplateService:
                     content={},
                     html_content=tpl["html_content"],
                     original_presentation_id=None,
-                    user_id=user_id,  # Может быть None для системных шаблонов
+                    user_id=user_id,
                     is_public=True,
                     preview_image_url=""
                 )
@@ -333,40 +334,28 @@ class TemplateService:
     async def create_template_from_data(
         title: str,
         html_content: str,
-        user_id: int,
+        user_id: Column[int],
         session: AsyncSession,
         description: Optional[str] = None,
         presentation_id: Optional[int] = None
     ) -> TemplateCreateResponse:
-        """
-        Создает шаблон из переданных данных напрямую
+        """Создает шаблон из переданных данных напрямую"""
         
-        Args:
-            title: Заголовок шаблона
-            html_content: HTML контент презентации
-            user_id: ID пользователя-создателя
-            session: Сессия БД
-            description: Опциональное описание
-            presentation_id: Опциональный ID презентации в БД
-        """
-        
-        # Создаем минимальный объект content для совместимости
         content = {
             "title": title,
             "description": description or "",
             "html": html_content,
-            "slides_count": 1,  # Базовое значение
+            "slides_count": 1,
             "language": "en"
         }
         
-        # Создаем шаблон
         template = Template(
             public_id=str(uuid.uuid4()),
             title=title,
             name=title,
             content=content,
-            html_content=html_content,  # Используем переданный HTML
-            original_presentation_id=presentation_id,  # Может быть None
+            html_content=html_content,
+            original_presentation_id=presentation_id,
             user_id=user_id,
             is_public=True,
             preview_image_url=""
@@ -377,10 +366,6 @@ class TemplateService:
         await session.refresh(template)
         
         return TemplateCreateResponse(
-            templateId=template.public_id,
+            templateId=str(template.public_id),
             message=f"Template '{title}' created successfully"
         )
-
-
-# Глобальный экземпляр сервиса
-template_service = TemplateService()

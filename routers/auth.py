@@ -64,7 +64,7 @@ async def login(
         select(User).where(User.email == form_data.username)
     )
     user = result.scalars().first()
-    if not user or not verify_password(form_data.password, user.hashed_password):
+    if not user or not verify_password(form_data.password, str(user.hashed_password)):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
@@ -145,8 +145,8 @@ async def google_callback(code: str, session: AsyncSession = Depends(get_session
             username=username,
             hashed_password="google_oauth",
             role="user",
-            credits=0
-        )
+            credits=0       
+            )
         session.add(user)
         await session.commit()
         await session.refresh(user)
