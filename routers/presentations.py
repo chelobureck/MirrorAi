@@ -53,13 +53,16 @@ async def create_presentation(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
-    # Ограничения для гостей
-    if current_user.role == "guest":
-        if current_user.credits <= 0:
+    user_role = current_user.role  # str
+    user_credits = current_user.credits  # int
+    
+    if user_role == "guest":
+        if user_credits <= 0:
             raise HTTPException(status_code=403, detail="Кредиты закончились")
         if len(presentation.content.get("slides", [])) > 5:
             raise HTTPException(status_code=403, detail="Гостям доступно не более 5 слайдов")
         raise HTTPException(status_code=403, detail="Гостям нельзя сохранять презентации")
+    
     
     new_presentation = Presentation(
         user_id=current_user.id,
